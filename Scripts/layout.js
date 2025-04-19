@@ -14,10 +14,14 @@ function initDashboard() {
 
 function loadScriptsAfterContent() {
   const scripts = [
-    "/Scripts/flot/jquery.flot.js",
-    "/Scripts/flot/jquery.flot.resize.js",
-    "/Scripts/datatables/jquery.dataTables.js",
-    "/Scripts/common.js"
+    "/Scripts/jquery-1.9.1.min.js",
+    "/Scripts/jquery-ui-1.10.1.custom.min.js" ,
+    "/bootstrap/js/bootstrap.min.js" ,
+    "/Scripts/flot/jquery.flot.js" ,
+    "/Scripts/flot/jquery.flot.resize.js" ,
+    "/Scripts/datatables/jquery.dataTables.js" ,
+    "/Scripts/common.js" ,
+    
   ];
 
   // Đánh dấu những script đã load để không chèn trùng
