@@ -70,8 +70,133 @@
                 </div>
                 <!--/.span3-->
                 <div class="span9">
+                    <div class="content">
+                        <div class="btn-controls">
+                            <div class="btn-box-row row-fluid">
+                                <a href="#" class="btn-box big span4">
+                                    <i class="icon-money"></i>
+                                    <div class="total-money">
+                                        <b class="number-money">2.400</b>
+                                        <b class="concurrency">USD</b>
+                                    </div>
+                                    
+                                    <p class="text-muted">
+                                        Total
+                                    </p>
+                                </a><a href="#" class="btn-box big span4">
+                                    <i class="icon-user"></i><b>10</b>
+                                    <p class="text-muted">
+                                        Shareholders
+                                    </p>
+                                </a><a href="#" class="btn-box big span4">
+                                    <i class="icon-home"></i><b>15,152</b>
+                                    <p class="text-muted">
+                                        Department
+                                    </p>
+                                </a>
+                            </div>
                     
+                        </div>
+                        <div class="calendar">
+                            <h4 class="title">
+                                Chọn năm
+                            </h4>
+                            <input type="text" id="yearPicker" placeholder="Chọn năm">
+                        </div>
                     
+                        <!-- Department Bar Chart -->
+                        <div class="module">
+                            <div class="module-head" id="chart-title">
+                                <h3>
+                                    Department Budget Bar Chart
+                                </h3>
+                                <div class="total">
+                                    <div class="number-money">2.400</div>
+                                    <div class="concurrency">USD</div>
+                                </div>
+                            </div>
+                            <div class="module-body" style="height:400px;">
+                                <div style="position:relative; height:100%; width:100%;">
+                                    <canvas id="departmentBarChart"></canvas>
+                    
+                                </div>
+                                
+                            </div>
+                        </div>
+                    
+                        <!-- Two Pie Charts -->
+                        <div class="container-chart row-fluid">
+                            <div class="span12">
+                                <div class="span6">
+                                    <!-- Gender Pie Chart -->
+                                    <div class="module pie-chart" style="flex:1;" id="chart-title">
+                                        <div class="module-head" id="chart-title">
+                                            <h3>Gender</h3>
+                                            <div class="total">
+                                                <div class="number-money">2.400</div>
+                                                <div class="concurrency">USD</div>
+                                            </div>
+                                        </div>
+                                        <div class="module-body" style="height:350px;">
+                                            <div class="chart-body">
+                                                <canvas id="genderPieChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="span6">
+                                    <!-- Employee Pie Chart -->
+                                    <div class="module pie-chart" style="flex:1;" id="chart-title">
+                                        <div class="module-head" id="chart-title">
+                                            <h3>Employee</h3>
+                                            <div class="total">
+                                                <div class="number-money">2.400</div>
+                                                <div class="concurrency">USD</div>
+                                            </div>
+                                        </div>
+                                        <div class="module-body" style="height:350px;">
+                                            <div class="chart-body">
+                                                <canvas id="employeePieChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    
+                        <!-- Shareholder Bar Chart -->
+                        <div class="module pie-chart" style="flex:1;" id="chart-title">
+                            <div class="module-head" id="chart-title">
+                                <h3>Shareholder</h3>
+                                <div class="total">
+                                    <div class="number-money">2.400</div>
+                                    <div class="concurrency">USD</div>
+                                </div>
+                            </div>
+                            <div class="module-body" style="height:400px;">
+                                <div style="position:relative; height:100%; width:100%;">
+                                    <canvas id="shareholderBarChart" class=""></canvas>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    
+                        <!-- Ethnicity Pie Chart -->
+                        <div class="module pie-chart" style="flex:1;" id="chart-title">
+                            <div class="module-head" id="chart-title">
+                                <h3>Ethnicity</h3>
+                                <div class="total">
+                                    <div class="number-money">2.400</div>
+                                    <div class="concurrency">USD</div>
+                                </div>
+                            </div>
+                            <div class="module-body" style="height:400px;">
+                                <div style="position:relative; height:100%; width:100%;">
+                                    <canvas id="ethnicityBarChart" class=""></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <!--/.content-->
                 </div>
                 <!--/.span9-->
@@ -79,29 +204,94 @@
         </div>
         <!--/.container-->
     </div>
+
     
     
-    <!-- <script src="/Scripts/jquery-1.9.1.min.js" type="text/javascript"></script>
+    
+    <script src="/Scripts/jquery-1.9.1.min.js" type="text/javascript"></script>
     <script src="/Scripts/jquery-ui-1.10.1.custom.min.js" type="text/javascript"></script>
     <script src="/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
     <script src="/Scripts/flot/jquery.flot.js" type="text/javascript"></script>
     <script src="/Scripts/flot/jquery.flot.resize.js" type="text/javascript"></script>
     <script src="/Scripts/datatables/jquery.dataTables.js" type="text/javascript"></script>
-    <script src="/Scripts/common.js" type="text/javascript"></script> -->
+    <script src="/Scripts/common.js" type="text/javascript"></script>
     
-    <script src="/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
+    
+    <script type="module">
+        import { insertNavbar, insertFooter } from '/Scripts/component.js';
+        insertNavbar('body', 'afterbegin');
+        insertFooter('body', 'beforeend');
+    </script>
+
+    <!-- <script src="/Scripts/layout.js" type="text/javascript"></script> -->
+     
     <!-- !-- Flatpickr JS -->
-    
-
-    <script src="/Scripts/layout.js" type="text/javascript"></script>
-
-    <!-- <script src="https://cdn.jsdelivr.net/npm/flatpickr" type="text/javascript"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js" type="text/javascript"></script>
     <script>
-    flatpickr("#myDate", {
-        dateFormat: "d/m/Y"  // dd/mm/yyyy
-    });
-    </script> -->
+    flatpickr("#yearPicker", {
+          dateFormat: "Y",         // Chỉ hiển thị năm
+          defaultDate: new Date(), // Tùy chọn: năm hiện tại
+          plugins: [
+            new monthSelectPlugin({
+              shorthand: true,
+              dateFormat: "Y",
+              theme: "light"
+            })
+          ]
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+    <script type="module">
+        import { renderDepartmentBarChart } from '/Charts/departmentBarChart.js';
+        import { renderGenderPieChart } from '/Charts/genderPieChart.js';
+        import { renderEmployeePieChart } from '/Charts/employeePieChart.js';
+        import { renderShareholderBarChart } from '/Charts/shareholderBarChart.js';
+        import { renderEthnicityBarChart } from '/Charts/ethnicityBarChart.js';
+    
+        // Department Bar Chart
+        renderDepartmentBarChart(
+            document.getElementById('departmentBarChart').getContext('2d'),
+            ['Sell Department', 'Marketing','HR','Payroll','Accounting', 'IT','R&D','Legal','Admin','Support'],
+            [12000, 15000, 9000, 18000, 11000, 17000, 14000, 16000, 13000, 20000]
+        );
+    
+        // Gender Pie Chart
+        renderGenderPieChart(
+            document.getElementById('genderPieChart').getContext('2d'),
+            ['Male', 'Female'],
+            [7680, 5120],
+            ['#4e73df', '#e74a3b']
+        );
+    
+        // Employee Pie Chart
+        renderEmployeePieChart(
+            document.getElementById('employeePieChart').getContext('2d'),
+            ['Full-time', 'Part-time'],
+            [7680, 5120],
+            ['#1cc88a', '#f6c23e']
+        );
+    
+        // Shareholder Bar Chart
+        renderShareholderBarChart(
+            document.getElementById('shareholderBarChart').getContext('2d'),
+            ['SH1', 'SH2', 'SH3', 'SH4', 'SH5', 'SH6', 'SH7', 'SH8', 'SH9', 'SH10'],
+            [1200, 1500, 900, 1800, 1100, 1700, 1400, 1600, 1300, 2000],
+            
+        );
+    
+        // Ethnicity Bar Chart
+        renderEthnicityBarChart(
+            document.getElementById('ethnicityBarChart').getContext('2d'),
+            ['Asian', 'Black', 'White', 'Hispanic', 'Native', 'Pacific', 'Arab', 'Jewish', 'Other1', 'Other2'],
+            [800, 950, 1200, 1100, 700, 650, 900, 1050, 980, 1020],
+        );
+    </script>
+
+    
 
 
     
