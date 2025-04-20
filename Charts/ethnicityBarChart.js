@@ -1,7 +1,7 @@
 export function renderEthnicityBarChart(ctx, labels, data) {
     const hueOffset = Math.floor(Math.random() * 360);
     const colors = Array.from({length: data.length}, (_, i) =>
-        `hsl(${(hueOffset + Math.round(360 * i / data.length)) % 360}, 50%, 50%)`
+        `hsl(${(hueOffset + Math.round(360 * i / data.length)) % 360}, 70%, 70%)`
     );
     const maxValue = Math.max(...data);
     return new Chart(ctx, {

@@ -2,6 +2,7 @@ export function renderDepartmentBarChart(ctx, labels, data) {
     const colors = Array.from({length: data.length}, (_, i) =>
         `hsl(${Math.round(360 * i / data.length)}, 70%, 70%)`
     );
+    const maxValue = Math.max(...data);
     return new Chart(ctx, {
         type: 'bar',
         data: {
@@ -24,6 +25,7 @@ export function renderDepartmentBarChart(ctx, labels, data) {
             scales: {
                 y: {
                     beginAtZero: true,
+                    max: maxValue + 2000,
                     ticks: {
                         callback: function(value) {
                             return '$' + value.toLocaleString();
