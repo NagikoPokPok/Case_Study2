@@ -1,10 +1,16 @@
-export function renderEmployeePieChart(ctx, labels, data, colors) {
+export function renderShareholderPieChart(ctx, labels, data, colors) {
     // If colors not provided, generate random pastel colors
     if (!colors || colors.length < data.length) {
         colors = Array.from({length: data.length}, (_, i) =>
             `hsl(${Math.round(360 * i / data.length)}, 70%, 70%)`
         );
     }
+    const maxValue = Math.max(...data);
+
+    // Calculate padding based on number of digits in maxValue
+    const zeros = Math.floor(Math.log10(maxValue));
+    const padding = Math.pow(10, zeros - 1 > 0 ? zeros - 1 : 1);
+
     return new Chart(ctx, {
         type: 'pie',
         data: {

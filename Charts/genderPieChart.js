@@ -1,7 +1,10 @@
-export function renderGenderPieChart(ctx, labels, data) {
-    const colors = Array.from({length: data.length}, (_, i) =>
-        `hsl(${Math.round(360 * i / data.length)}, 70%, 70%)`
-    );
+export function renderGenderPieChart(ctx, labels, data,colors) {
+    // If colors not provided, generate random pastel colors
+    if (!colors || colors.length < data.length) {
+        colors = Array.from({length: data.length}, (_, i) =>
+            `hsl(${Math.round(360 * i / data.length)}, 70%, 70%)`
+        );
+    }
     return new Chart(ctx, {
         type: 'pie',
         data: {

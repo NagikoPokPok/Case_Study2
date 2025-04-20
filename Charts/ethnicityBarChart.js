@@ -1,9 +1,17 @@
-export function renderEthnicityBarChart(ctx, labels, data) {
-    const hueOffset = Math.floor(Math.random() * 360);
-    const colors = Array.from({length: data.length}, (_, i) =>
-        `hsl(${(hueOffset + Math.round(360 * i / data.length)) % 360}, 70%, 70%)`
-    );
+export function renderEthnicityBarChart(ctx, labels, data, colors) {
+    
+    // If colors not provided, generate random pastel colors
+    if (!colors || colors.length < data.length) {
+        const hueOffset = Math.floor(Math.random() * 360);
+        colors = Array.from({length: data.length}, (_, i) =>
+            `hsl(${(hueOffset + Math.round(360 * i / data.length)) % 360}, 70%, 70%)`
+        );
+    }
     const maxValue = Math.max(...data);
+    // Calculate padding based on number of digits in maxValue
+    const zeros = Math.floor(Math.log10(maxValue));
+    const padding = Math.pow(10, zeros - 1 > 0 ? zeros - 1 : 1);
+
     return new Chart(ctx, {
         type: 'bar',
         data: {
@@ -29,7 +37,7 @@ export function renderEthnicityBarChart(ctx, labels, data) {
                 x: { grid: { display: false } },
                 y: {
                     beginAtZero: true,
-                    max: maxValue + 300,
+                    max: maxValue + padding,
                     ticks: {
                         callback: function(value) {
                             return '$' + value.toLocaleString();

@@ -1,8 +1,15 @@
-export function renderDepartmentBarChart(ctx, labels, data) {
-    const colors = Array.from({length: data.length}, (_, i) =>
-        `hsl(${Math.round(360 * i / data.length)}, 70%, 70%)`
-    );
+export function renderDepartmentBarChart(ctx, labels, data, colors) {
+    // If colors not provided, generate random pastel colors
+    if (!colors || colors.length < data.length) {
+        colors = Array.from({length: data.length}, (_, i) =>
+            `hsl(${Math.round(360 * i / data.length)}, 70%, 70%)`
+        );
+    }
     const maxValue = Math.max(...data);
+    // Calculate padding based on number of digits in maxValue
+    const zeros = Math.floor(Math.log10(maxValue));
+    const padding = Math.pow(10, zeros - 1 > 0 ? zeros - 1 : 1);
+
     return new Chart(ctx, {
         type: 'bar',
         data: {
@@ -25,7 +32,7 @@ export function renderDepartmentBarChart(ctx, labels, data) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    max: maxValue + 2000,
+                    max: maxValue + padding,
                     ticks: {
                         callback: function(value) {
                             return '$' + value.toLocaleString();

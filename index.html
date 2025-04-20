@@ -15,6 +15,8 @@
     <!-- Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
+
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 </head>
 <body>
 
@@ -23,26 +25,6 @@
             <div class="row">
                 <div class="span3">
                     <div class="sidebar">
-                        <!-- <ul class="widget widget-menu unstyled">
-                            <li class="active">
-                                <a href="">
-                                    <i class="menu-icon icon-dashboard"></i>Dashboard
-                                </a>
-                            </li>
-                            <li>
-                                <a href="~/Personals"><i class="menu-icon icon-bullhorn"></i>Personal List </a>
-                            </li>
-                            <li>
-                                <a href="~/BenefitPlans">
-                                    <i class="menu-icon icon-tasks"></i>Benefit Plans
-                                </a>
-                            </li>
-                            <li>
-                                <a href="~/JobHistory">
-                                    <i class="menu-icon icon-inbox"></i>Job History
-                                </a>
-                            </li>
-                        </ul> -->
                         <ul class="widget widget-menu unstyled">
                             <li>
                                 <a data-toggle="collapse" href="#togglePages">
@@ -51,9 +33,9 @@
                                     <i class="icon-chevron-up pull-right"></i>
                                     Dashboard
                                 </a>
-                                <ul id="togglePages" class="collapse in unstyled"> <!-- thêm `in` ở đây -->
+                                <ul id="togglePages" class="collapse in unstyled" > <!-- thêm `in` ở đây -->
                                     <li>
-                                        <a href="#">
+                                        <a href="index.html">
                                             <i class="icon-money"></i>
                                             Total earnings 
                                         </a>
@@ -163,39 +145,52 @@
                                 </div>
                             </div>
                         </div>
-                    
-                        <!-- Shareholder Bar Chart -->
-                        <div class="module pie-chart" style="flex:1;" id="chart-title">
-                            <div class="module-head" id="chart-title">
-                                <h3>Shareholder</h3>
-                                <div class="total">
-                                    <div class="number-money">2.400</div>
-                                    <div class="concurrency">USD</div>
+
+                        <div class="container-chart row-fluid">
+                            <div class="span12">
+                                <div class="span6">
+                                    <!-- Shareholder Bar Chart -->
+                                    <div class="module pie-chart" style="flex:1;" id="chart-title">
+                                        <div class="module-head" id="chart-title">
+                                            <h3>Shareholder</h3>
+                                            <div class="total">
+                                                <div class="number-money">2.400</div>
+                                                <div class="concurrency">USD</div>
+                                            </div>
+                                        </div>
+                                        <div class="module-body" style="height:350px;">
+                                            <div class="chart-body">
+                                                <canvas id="shareholderPieChart" class=""></canvas>
+                                            </div>
+                                            
+                                        </div>
+                                    </div>
+                                    
                                 </div>
-                            </div>
-                            <div class="module-body" style="height:400px;">
-                                <div style="position:relative; height:100%; width:100%;">
-                                    <canvas id="shareholderBarChart" class=""></canvas>
+                                <div class="span6">
+                                     <!-- Ethnicity Pie Chart -->
+                                    <div class="module pie-chart" style="flex:1;" id="chart-title">
+                                        <div class="module-head" id="chart-title">
+                                            <h3>Ethnicity</h3>
+                                            <div class="total">
+                                                <div class="number-money">2.400</div>
+                                                <div class="concurrency">USD</div>
+                                            </div>
+                                        </div>
+                                        <div class="module-body" style="height:350px;">
+                                            <div style="position:relative; height:100%; width:100%;">
+                                                <canvas id="ethnicityBarChart" class=""></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
                                 </div>
-                                
                             </div>
                         </div>
                     
-                        <!-- Ethnicity Pie Chart -->
-                        <div class="module pie-chart" style="flex:1;" id="chart-title">
-                            <div class="module-head" id="chart-title">
-                                <h3>Ethnicity</h3>
-                                <div class="total">
-                                    <div class="number-money">2.400</div>
-                                    <div class="concurrency">USD</div>
-                                </div>
-                            </div>
-                            <div class="module-body" style="height:400px;">
-                                <div style="position:relative; height:100%; width:100%;">
-                                    <canvas id="ethnicityBarChart" class=""></canvas>
-                                </div>
-                            </div>
-                        </div>
+                        
+                    
+                       
                     </div>
                     <!--/.content-->
                 </div>
@@ -215,6 +210,8 @@
     <script src="/Scripts/flot/jquery.flot.resize.js" type="text/javascript"></script>
     <script src="/Scripts/datatables/jquery.dataTables.js" type="text/javascript"></script>
     <script src="/Scripts/common.js" type="text/javascript"></script>
+
+    <script src="/Scripts/sidebarToggle.js"></script>
     
     
     <script type="module">
@@ -242,6 +239,7 @@
         });
     </script>
 
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 
@@ -249,7 +247,7 @@
         import { renderDepartmentBarChart } from '/Charts/departmentBarChart.js';
         import { renderGenderPieChart } from '/Charts/genderPieChart.js';
         import { renderEmployeePieChart } from '/Charts/employeePieChart.js';
-        import { renderShareholderBarChart } from '/Charts/shareholderBarChart.js';
+        import { renderShareholderPieChart } from '/Charts/shareholderPieChart.js';
         import { renderEthnicityBarChart } from '/Charts/ethnicityBarChart.js';
     
         // Department Bar Chart
@@ -276,24 +274,21 @@
         );
     
         // Shareholder Bar Chart
-        renderShareholderBarChart(
-            document.getElementById('shareholderBarChart').getContext('2d'),
-            ['SH1', 'SH2', 'SH3', 'SH4', 'SH5', 'SH6', 'SH7', 'SH8', 'SH9', 'SH10'],
-            [1200, 1500, 900, 1800, 1100, 1700, 1400, 1600, 1300, 2000],
+        renderShareholderPieChart(
+            document.getElementById('shareholderPieChart').getContext('2d'),
+            ['Shareholder', 'Non-Shareholder'],
+            [320000, 150000],
+            ['#6f42c1', '#d63384']
             
         );
     
         // Ethnicity Bar Chart
         renderEthnicityBarChart(
             document.getElementById('ethnicityBarChart').getContext('2d'),
-            ['Asian', 'Black', 'White', 'Hispanic', 'Native', 'Pacific', 'Arab', 'Jewish', 'Other1', 'Other2'],
-            [800, 950, 1200, 1100, 700, 650, 900, 1050, 980, 1020],
+            ['Asian', 'Black', 'White', 'Hispanic', 'Others'],
+            [800, 950, 1200, 1100, 700]
         );
     </script>
 
-    
-
-
-    
 </body>
 </html>
