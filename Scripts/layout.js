@@ -119,7 +119,8 @@ async function initDashboard() {
                         '#f6c23e',
                         '#e74a3b'
                     ],
-                    borderWidth: 1
+                    borderWidth: 1,
+                    borderRadius: 12
                 }]
             },
             options: {
@@ -219,6 +220,9 @@ async function initDashboard() {
             },
             plugins: [ChartDataLabels]
         });
+
+        // Shareholder Bar Chart
+        
       }
 
       // Gọi các hàm khởi tạo khác nếu cần

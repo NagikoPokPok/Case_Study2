@@ -33,6 +33,22 @@
     font-weight: bold;
 }
 
+.module-body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.chart-body {
+    position:relative; 
+    height:100%; 
+    width:100%; 
+    max-width:320px; 
+    max-height:320px; 
+    margin:auto;
+}
+
 .module #chart-title{
     display: flex;
     justify-content: space-between;
@@ -48,7 +64,7 @@
     }
 }
 
-.container {
+.container-chart {
     display: flex;
     width: 100%;
     justify-content: space-between;
@@ -56,7 +72,8 @@
     margin-top: 20px;
 }
 
-.container .gender-pie-chart {
-    width: 50%;
+.container-chart .pie-chart {
+    width: 100%;
     margin-right: 20px;
 }
+
