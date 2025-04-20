@@ -55,6 +55,14 @@ async function loadAllScripts() {
   }
 }
 
+// Hàm chèn navbar và footer vào trang
+// Anywhere in layout.js
+(async () => {
+  const { insertNavbar, insertFooter } = await import('./component.js');
+  insertNavbar('body', 'afterbegin');
+  insertFooter('body', 'beforeend');
+})();
+
 // Hàm khởi tạo dashboard
 async function initDashboard() {
   const container = document.querySelector('.span9');
@@ -249,3 +257,5 @@ window.addEventListener("pageshow", function(event) {
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
   initDashboard();
 }
+
+
