@@ -15,7 +15,7 @@ const requiredScripts = [
   "https://cdn.jsdelivr.net/npm/flatpickr",
   "https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js",
   "https://cdn.jsdelivr.net/npm/chart.js",
-"https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels",
+  "https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels",
 ];
 
 // Hàm tải từng script với Promise
@@ -56,7 +56,6 @@ async function loadAllScripts() {
 }
 
 // Hàm chèn navbar và footer vào trang
-// Anywhere in layout.js
 (async () => {
   const { insertNavbar, insertFooter } = await import('./component.js');
   insertNavbar('body', 'afterbegin');
@@ -230,7 +229,146 @@ async function initDashboard() {
         });
 
         // Shareholder Bar Chart
-        
+        const shareholderLabels = [
+          'SH1', 'SH2', 'SH3', 'SH4', 'SH5', 'SH6', 'SH7', 'SH8', 'SH9', 'SH10'
+        ];
+        const shareholderData = [1200, 1500, 900, 1800, 1100, 1700, 1400, 1600, 1300, 2000];
+        const maxShareholder = Math.max(...shareholderData);
+
+        const shareholderCtx = document.getElementById('shareholderBarChart').getContext('2d');
+        new Chart(shareholderCtx, {
+          type: 'bar',
+          data: {
+              labels: shareholderLabels,
+              datasets: [{
+                  label: 'Shareholder Value ($)',
+                  data: shareholderData,
+                  backgroundColor: [
+                      '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
+                      '#858796', '#fd7e14', '#20c997', '#6f42c1', '#d63384'
+                  ],
+                  borderRadius: 32, // Large border radius
+                  borderSkipped: false, // Rounded all corners
+                  barPercentage: 0.7, // Thicker bars
+                  categoryPercentage: 0.7
+              }]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: {
+                  duration: 1500,
+                  easing: 'easeOutBounce'
+              },
+              scales: {
+                  x: {
+                      grid: { display: false }
+                  },
+                  y: {
+                      beginAtZero: true,
+                      max: maxShareholder + 300, // Add some padding above the tallest bar
+                      ticks: {
+                          callback: function(value) {
+                              return '$' + value.toLocaleString();
+                          }
+                      }
+                  }
+              },
+              plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                      callbacks: {
+                          label: function(context) {
+                              return '$' + context.parsed.y.toLocaleString();
+                          }
+                      }
+                  },
+                  datalabels: {
+                    anchor: 'end',      // Center of the bar
+                    align: 'end',       // Center vertically
+                    color: '#222',
+                      font: { weight: 'bold' },
+                      formatter: function(value) {
+                          return '$' + value.toLocaleString();
+                      }
+                  }
+              }
+          },
+          plugins: [ChartDataLabels]
+        });
+
+
+        // Ethnicity Bar Chart
+        const ethnicityLabels = [
+          'Asian', 'Black', 'White', 'Hispanic', 'Native', 'Pacific', 'Arab', 'Jewish', 'Other1', 'Other2'
+        ];
+        const ethnicityData = [800, 950, 1200, 1100, 700, 650, 900, 1050, 980, 1020];
+        const maxEthnicity = Math.max(...ethnicityData);
+
+        const ethnicityCtx = document.getElementById('ethnicityBarChart').getContext('2d');
+        new Chart(ethnicityCtx, {
+          type: 'bar',
+          data: {
+              labels: ethnicityLabels,
+              datasets: [{
+                  label: 'Ethnicity Count',
+                  data: ethnicityData,
+                  backgroundColor: [
+                      '#fd7e14', '#20c997', '#6f42c1', '#d63384', '#4e73df',
+                      '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796'
+                  ],
+                  borderRadius: 32,
+                  borderSkipped: false,
+                  barPercentage: 0.7,
+                  categoryPercentage: 0.7
+              }]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: {
+                  duration: 1500,
+                  easing: 'easeOutBounce'
+              },
+              scales: {
+                  x: {
+                      grid: { display: false }
+                  },
+                  y: {
+                      beginAtZero: true,
+                      max: maxEthnicity + 300, // Add some padding above the tallest bar
+                      ticks: {
+                          callback: function(value) {
+                              return value.toLocaleString();
+                          }
+                      }
+                  }
+              },
+              plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          return '$' + context.parsed.y.toLocaleString();
+                      }
+                      }
+                  },
+                  datalabels: {
+                      anchor: 'end',
+                      align: 'end',
+                      color: '#222',
+                      font: { weight: 'bold', size: 14 },
+                      offset: -4,
+                      formatter: function(value) {
+                        return '$' + value.toLocaleString();
+                      }
+                  }
+              }
+          },
+          plugins: [ChartDataLabels]
+        });
+
+
       }
 
       // Gọi các hàm khởi tạo khác nếu cần

@@ -37,16 +37,16 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 20px;
+ 
 }
 
 .chart-body {
     position:relative; 
     height:100%; 
     width:100%; 
-    max-width:320px; 
-    max-height:320px; 
-    margin:auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .module #chart-title{
