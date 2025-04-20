@@ -11,7 +11,11 @@ const requiredScripts = [
   "/Scripts/flot/jquery.flot.js",
   "/Scripts/flot/jquery.flot.resize.js",
   "/Scripts/datatables/jquery.dataTables.js",
-  "/Scripts/common.js"
+  "/Scripts/common.js",
+  "https://cdn.jsdelivr.net/npm/flatpickr",
+  "https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js",
+  "https://cdn.jsdelivr.net/npm/chart.js",
+"https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels",
 ];
 
 // Hàm tải từng script với Promise
@@ -72,11 +76,155 @@ async function initDashboard() {
     container.innerHTML = html;
 
     // Tải các script sau khi có nội dung
-    await loadAllScripts();
+    const scriptsLoaded = await loadAllScripts();
 
-    // Gọi các hàm khởi tạo khác nếu cần
-    if (typeof initPageSpecificFunctions === 'function') {
-      initPageSpecificFunctions();
+    if (scriptsLoaded) {
+      // Khởi tạo flatpickr nếu tồn tại phần tử #myDate
+      const dateInput = document.querySelector("#yearPicker");
+      if (dateInput && typeof flatpickr === "function") {
+        // flatpickr("#myDate", {
+        //   dateFormat: "d/m/Y"  // dd/mm/yyyy
+        // });
+        flatpickr("#yearPicker", {
+          dateFormat: "Y",         // Chỉ hiển thị năm
+          defaultDate: new Date(), // Tùy chọn: năm hiện tại
+          plugins: [
+            new monthSelectPlugin({
+              shorthand: true,
+              dateFormat: "Y",
+              theme: "light"
+            })
+          ]
+        });
+
+        // Department Bar Chart
+        const ctx = document.getElementById('departmentBarChart').getContext('2d');
+        const departmentBarChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [
+                    'Sell Department',
+                    'Marketing',
+                    'HR',
+                    'Payroll',
+                    'Accounting'
+                ],
+                datasets: [{
+                    label: 'Budget ($)',
+                    data: [15000, 32000, 13000, 38000, 30000],
+                    backgroundColor: [
+                        '#4e73df',
+                        '#1cc88a',
+                        '#36b9cc',
+                        '#f6c23e',
+                        '#e74a3b'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 1500,
+                    easing: 'easeOutBounce'
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return '$' + context.parsed.y.toLocaleString();
+                            }
+                        }
+                    },
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'end',
+                        color: '#222',
+                        font: {
+                            weight: 'bold'
+                        },
+                        formatter: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+
+        // Gender Pie Chart
+        const genderCtx = document.getElementById('genderPieChart').getContext('2d');
+        new Chart(genderCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Male', 'Female'],
+                datasets: [{
+                    data: [7680, 5120],
+                    backgroundColor: ['#4e73df', '#e74a3b']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    datalabels: {
+                        color: '#222',
+                        font: { weight: 'bold' },
+                        formatter: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+
+        // Employee Pie Chart
+        const employeeCtx = document.getElementById('employeePieChart').getContext('2d');
+        new Chart(employeeCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Full-time', 'Part-time'],
+                datasets: [{
+                    data: [7680, 5120],
+                    backgroundColor: ['#1cc88a', '#f6c23e']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    datalabels: {
+                        color: '#222',
+                        font: { weight: 'bold' },
+                        formatter: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+      }
+
+      // Gọi các hàm khởi tạo khác nếu cần
+      if (typeof initPageSpecificFunctions === 'function') {
+        initPageSpecificFunctions();
+      }
     }
   } catch (error) {
     console.error("Lỗi khi khởi tạo dashboard:", error);

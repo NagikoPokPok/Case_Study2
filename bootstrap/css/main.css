@@ -1,0 +1,62 @@
+.total-money{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .concurrency{
+        margin-left: 5px;
+    }
+}
+
+.calendar{
+    display: flex;
+    justify-content: end;
+    align-items: end;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    flex-direction: column;
+}
+
+.calendar .title {
+    font-size: 20px;
+    font-weight: normal;
+    margin-bottom: 10px;
+    text-align: start;
+
+}
+
+
+#yearPicker {
+    font-size: 20px;
+    padding: 12px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.module #chart-title{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.module #chart-title .total {
+    display: flex;
+    font-size: 20px;
+
+    .concurrency{
+        margin-left: 5px;
+    }
+}
+
+.container {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.container .gender-pie-chart {
+    width: 50%;
+    margin-right: 20px;
+}
