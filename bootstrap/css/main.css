@@ -58,6 +58,7 @@
 .module #chart-title .total {
     display: flex;
     font-size: 20px;
+    color: black;
 
     .concurrency{
         margin-left: 5px;

@@ -105,27 +105,21 @@ async function initDashboard() {
         });
 
         // Department Bar Chart
+        const departmentLabels = [
+          'Sell Department', 'Marketing','HR','Payroll','Accounting'];
+        const departmentData = [15000, 32000, 13000, 38000, 30000];
+        const departmentColors = [
+          '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'
+        ];
         const ctx = document.getElementById('departmentBarChart').getContext('2d');
         const departmentBarChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: [
-                    'Sell Department',
-                    'Marketing',
-                    'HR',
-                    'Payroll',
-                    'Accounting'
-                ],
+                labels: departmentLabels,
                 datasets: [{
                     label: 'Budget ($)',
-                    data: [15000, 32000, 13000, 38000, 30000],
-                    backgroundColor: [
-                        '#4e73df',
-                        '#1cc88a',
-                        '#36b9cc',
-                        '#f6c23e',
-                        '#e74a3b'
-                    ],
+                    data: departmentData,
+                    backgroundColor: departmentColors,
                     borderWidth: 1,
                     borderRadius: 12
                 }]
@@ -175,13 +169,15 @@ async function initDashboard() {
         });
 
         // Gender Pie Chart
+        genderLabels = ['Male', 'Female'];
+        genderData = [7680, 5120];
         const genderCtx = document.getElementById('genderPieChart').getContext('2d');
         new Chart(genderCtx, {
             type: 'pie',
             data: {
-                labels: ['Male', 'Female'],
+                labels: genderLabels,
                 datasets: [{
-                    data: [7680, 5120],
+                    data: genderData,
                     backgroundColor: ['#4e73df', '#e74a3b']
                 }]
             },
@@ -192,9 +188,12 @@ async function initDashboard() {
                     datalabels: {
                         color: '#222',
                         font: { weight: 'bold' },
-                        formatter: function(value) {
-                            return '$' + value.toLocaleString();
-                        }
+                        formatter: function(value, context) {
+                          // Show percentage only in pie
+                          const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                          const percent = value / total * 100;
+                          return percent.toFixed(1) + '%';
+                      }
                     }
                 }
             },
@@ -202,13 +201,15 @@ async function initDashboard() {
         });
 
         // Employee Pie Chart
+        const employeeLabels = ['Full-time', 'Part-time'];
+        const employeeData = [7680, 5120];
         const employeeCtx = document.getElementById('employeePieChart').getContext('2d');
         new Chart(employeeCtx, {
             type: 'pie',
             data: {
-                labels: ['Full-time', 'Part-time'],
+                labels: employeeLabels,
                 datasets: [{
-                    data: [7680, 5120],
+                    data: employeeData,
                     backgroundColor: ['#1cc88a', '#f6c23e']
                 }]
             },
@@ -219,9 +220,11 @@ async function initDashboard() {
                     datalabels: {
                         color: '#222',
                         font: { weight: 'bold' },
-                        formatter: function(value) {
-                            return '$' + value.toLocaleString();
-                        }
+                        formatter: function(value, context) {
+                          const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                          const percent = value / total * 100;
+                          return percent.toFixed(1) + '%';
+                      }
                     }
                 }
             },
@@ -350,15 +353,14 @@ async function initDashboard() {
                       callbacks: {
                         label: function(context) {
                           return '$' + context.parsed.y.toLocaleString();
-                      }
+                        }
                       }
                   },
                   datalabels: {
                       anchor: 'end',
                       align: 'end',
                       color: '#222',
-                      font: { weight: 'bold', size: 14 },
-                      offset: -4,
+                      font: { weight: 'bold' },
                       formatter: function(value) {
                         return '$' + value.toLocaleString();
                       }
