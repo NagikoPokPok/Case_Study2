@@ -58,8 +58,8 @@
                                 <a href="#" class="btn-box big span4">
                                     <i class="icon-money"></i>
                                     <div class="total-money">
-                                        <b class="number-money">2.400</b>
-                                        <b class="concurrency">USD</b>
+                                        <b class="number-money">365</b>
+                                        <b class="concurrency">days</b>
                                     </div>
                                     
                                     <p class="text-muted">
@@ -71,7 +71,7 @@
                                         Shareholders
                                     </p>
                                 </a><a href="#" class="btn-box big span4">
-                                    <i class="icon-home"></i><b>15,152</b>
+                                    <i class="icon-home"></i><b>5</b>
                                     <p class="text-muted">
                                         Department
                                     </p>
@@ -90,11 +90,11 @@
                         <div class="module">
                             <div class="module-head" id="chart-title">
                                 <h3>
-                                    Department Budget Bar Chart
+                                    Department
                                 </h3>
                                 <div class="total">
-                                    <div class="number-money">2.400</div>
-                                    <div class="concurrency">USD</div>
+                                    <div class="number-money">300</div>
+                                    <div class="concurrency">Days</div>
                                 </div>
                             </div>
                             <div class="module-body" style="height:400px;">
@@ -115,8 +115,8 @@
                                         <div class="module-head" id="chart-title">
                                             <h3>Gender</h3>
                                             <div class="total">
-                                                <div class="number-money">2.400</div>
-                                                <div class="concurrency">USD</div>
+                                                <div class="number-money">300</div>
+                                                <div class="concurrency">Days</div>
                                             </div>
                                         </div>
                                         <div class="module-body" style="height:350px;">
@@ -132,8 +132,8 @@
                                         <div class="module-head" id="chart-title">
                                             <h3>Employee</h3>
                                             <div class="total">
-                                                <div class="number-money">2.400</div>
-                                                <div class="concurrency">USD</div>
+                                                <div class="number-money">300</div>
+                                                <div class="concurrency">Days</div>
                                             </div>
                                         </div>
                                         <div class="module-body" style="height:350px;">
@@ -154,8 +154,8 @@
                                         <div class="module-head" id="chart-title">
                                             <h3>Shareholder</h3>
                                             <div class="total">
-                                                <div class="number-money">2.400</div>
-                                                <div class="concurrency">USD</div>
+                                                <div class="number-money">300</div>
+                                                <div class="concurrency">Days</div>
                                             </div>
                                         </div>
                                         <div class="module-body" style="height:350px;">
@@ -173,8 +173,8 @@
                                         <div class="module-head" id="chart-title">
                                             <h3>Ethnicity</h3>
                                             <div class="total">
-                                                <div class="number-money">2.400</div>
-                                                <div class="concurrency">USD</div>
+                                                <div class="number-money">300</div>
+                                                <div class="concurrency">Days</div>
                                             </div>
                                         </div>
                                         <div class="module-body" style="height:350px;">
@@ -254,14 +254,15 @@
         renderDepartmentBarChart(
             document.getElementById('departmentBarChart').getContext('2d'),
             ['Sell Department', 'Marketing','HR','Payroll','Accounting'],
-            [12000, 15000, 9000, 18000, 11000]
+            [30, 80, 25, 100, 65],
+
         );
     
         // Gender Pie Chart
         renderGenderPieChart(
             document.getElementById('genderPieChart').getContext('2d'),
             ['Male', 'Female'],
-            [7680, 5120],
+            [60, 40],
             ['#4e73df', '#e74a3b']
         );
     
@@ -269,7 +270,7 @@
         renderEmployeePieChart(
             document.getElementById('employeePieChart').getContext('2d'),
             ['Full-time', 'Part-time'],
-            [7680, 5120],
+            [30, 70],
             ['#1cc88a', '#f6c23e']
         );
     
@@ -277,7 +278,7 @@
         renderShareholderPieChart(
             document.getElementById('shareholderPieChart').getContext('2d'),
             ['Shareholder', 'Non-Shareholder'],
-            [320000, 150000],
+            [45, 55],
             ['#6f42c1', '#d63384']
             
         );
@@ -286,7 +287,7 @@
         renderEthnicityBarChart(
             document.getElementById('ethnicityBarChart').getContext('2d'),
             ['Asian', 'Black', 'White', 'Hispanic', 'Others'],
-            [800, 950, 1200, 1100, 700]
+            [30, 80, 25, 100, 65]
         );
     </script>
 

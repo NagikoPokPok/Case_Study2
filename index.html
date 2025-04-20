@@ -71,7 +71,7 @@
                                         Shareholders
                                     </p>
                                 </a><a href="#" class="btn-box big span4">
-                                    <i class="icon-home"></i><b>15,152</b>
+                                    <i class="icon-home"></i><b>5</b>
                                     <p class="text-muted">
                                         Department
                                     </p>
@@ -254,7 +254,9 @@
         renderDepartmentBarChart(
             document.getElementById('departmentBarChart').getContext('2d'),
             ['Sell Department', 'Marketing','HR','Payroll','Accounting'],
-            [12000, 15000, 9000, 18000, 11000]
+            [12000, 15000, 9000, 18000, 11000],
+            [],
+            'money'
         );
     
         // Gender Pie Chart
@@ -286,7 +288,9 @@
         renderEthnicityBarChart(
             document.getElementById('ethnicityBarChart').getContext('2d'),
             ['Asian', 'Black', 'White', 'Hispanic', 'Others'],
-            [800, 950, 1200, 1100, 700]
+            [800, 950, 1200, 1100, 700],
+            [],
+            'money'
         );
     </script>
 
