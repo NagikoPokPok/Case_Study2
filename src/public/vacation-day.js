@@ -4,7 +4,6 @@ import { renderEmployeePieChart } from '/Charts/employeePieChart.js';
 import { renderShareholderPieChart } from '/Charts/shareholderPieChart.js';
 import { renderEthnicityBarChart } from '/Charts/ethnicityBarChart.js';
 
-
 document.addEventListener("DOMContentLoaded", function () {
     const numberMoney = document.getElementById("number-day");
     const numberShareholder = document.getElementById("number-shareholder");
@@ -21,7 +20,6 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById('departmentBarChart').getContext('2d'),
         ['Sell Department', 'Marketing','HR','Payroll','Accounting'],
         [30, 80, 25, 100, 65],
-
     );
 
     // Gender Pie Chart
@@ -46,7 +44,6 @@ document.addEventListener("DOMContentLoaded", function () {
         ['Shareholder', 'Non-Shareholder'],
         [45, 55],
         ['#6f42c1', '#d63384']
-        
     );
 
     // Ethnicity Bar Chart
