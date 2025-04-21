@@ -1,4 +1,4 @@
-.total-money{
+.total-money, .total-day{
     display: flex;
     justify-content: center;
     align-items: center;

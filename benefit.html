@@ -86,14 +86,14 @@
                             <input type="text" id="yearPicker" placeholder="Chọn năm">
                         </div>
                     
-                        <!-- Department Bar Chart -->
+                        <!-- Shareholder and Non-shareholder Bar Chart -->
                         <div class="module">
                             <div class="module-head" id="chart-title">
                                 <h3>
                                     Average Benefit Paid
                                 </h3>
                                 <div class="total">
-                                    <div class="number-money">2.400</div>
+                                    <div class="number-money" id="total-average-benefit">2.400</div>
                                     <div class="concurrency">USD</div>
                                 </div>
                             </div>
@@ -158,16 +158,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 
-    <script type="module">
-        import { renderBenefitBarChart } from '/Charts/benefitBarChart.js';
-
-        renderBenefitBarChart(
-            document.getElementById('benefitBarChart').getContext('2d'),
-            ['Project 1', 'Project 2', 'Project 3', 'Project 4', 'Project 5', 'Project 6', 'Project 7', 'Project 8', 'Project 9', 'Project 10'],
-            [12000, 15000, 9000, 18000, 11000, 17000, 14000, 16000, 13000, 20000], // Shareholder data
-            [10000, 13000, 8000, 15000, 9000, 12000, 11000, 14000, 10000, 17000]   // Non-Shareholder data
-        );
-    </script>
+    <script type="module" src="/src/public/average-benefit.js"></script>
 
 </body>
 </html>

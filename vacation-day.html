@@ -56,9 +56,9 @@
                         <div class="btn-controls">
                             <div class="btn-box-row row-fluid">
                                 <a href="#" class="btn-box big span4">
-                                    <i class="icon-money"></i>
-                                    <div class="total-money">
-                                        <b class="number-money">365</b>
+                                    <i class="icon-calendar"></i>
+                                    <div class="total-day">
+                                        <b id="number-day">365</b>
                                         <b class="concurrency">days</b>
                                     </div>
                                     
@@ -66,12 +66,14 @@
                                         Total
                                     </p>
                                 </a><a href="#" class="btn-box big span4">
-                                    <i class="icon-user"></i><b>10</b>
+                                    <i class="icon-user"></i>
+                                    <b id="number-shareholder">10</b>
                                     <p class="text-muted">
                                         Shareholders
                                     </p>
                                 </a><a href="#" class="btn-box big span4">
-                                    <i class="icon-home"></i><b>5</b>
+                                    <i class="icon-home"></i>
+                                    <b id="number-department">5</b>
                                     <p class="text-muted">
                                         Department
                                     </p>
@@ -93,7 +95,7 @@
                                     Department
                                 </h3>
                                 <div class="total">
-                                    <div class="number-money">300</div>
+                                    <div class="number-day" id="total-department">300</div>
                                     <div class="concurrency">Days</div>
                                 </div>
                             </div>
@@ -115,7 +117,7 @@
                                         <div class="module-head" id="chart-title">
                                             <h3>Gender</h3>
                                             <div class="total">
-                                                <div class="number-money">300</div>
+                                                <div class="number-day" id="total-gender">300</div>
                                                 <div class="concurrency">Days</div>
                                             </div>
                                         </div>
@@ -132,7 +134,7 @@
                                         <div class="module-head" id="chart-title">
                                             <h3>Employee</h3>
                                             <div class="total">
-                                                <div class="number-money">300</div>
+                                                <div class="number-day" id="total-employee">300</div>
                                                 <div class="concurrency">Days</div>
                                             </div>
                                         </div>
@@ -154,7 +156,7 @@
                                         <div class="module-head" id="chart-title">
                                             <h3>Shareholder</h3>
                                             <div class="total">
-                                                <div class="number-money">300</div>
+                                                <div class="number-day" id="total-shareholder">300</div>
                                                 <div class="concurrency">Days</div>
                                             </div>
                                         </div>
@@ -173,7 +175,7 @@
                                         <div class="module-head" id="chart-title">
                                             <h3>Ethnicity</h3>
                                             <div class="total">
-                                                <div class="number-money">300</div>
+                                                <div class="number-day" id="total-ethnicity">300</div>
                                                 <div class="concurrency">Days</div>
                                             </div>
                                         </div>
@@ -243,53 +245,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 
-    <script type="module">
-        import { renderDepartmentBarChart } from '/Charts/departmentBarChart.js';
-        import { renderGenderPieChart } from '/Charts/genderPieChart.js';
-        import { renderEmployeePieChart } from '/Charts/employeePieChart.js';
-        import { renderShareholderPieChart } from '/Charts/shareholderPieChart.js';
-        import { renderEthnicityBarChart } from '/Charts/ethnicityBarChart.js';
-    
-        // Department Bar Chart
-        renderDepartmentBarChart(
-            document.getElementById('departmentBarChart').getContext('2d'),
-            ['Sell Department', 'Marketing','HR','Payroll','Accounting'],
-            [30, 80, 25, 100, 65],
-
-        );
-    
-        // Gender Pie Chart
-        renderGenderPieChart(
-            document.getElementById('genderPieChart').getContext('2d'),
-            ['Male', 'Female'],
-            [60, 40],
-            ['#4e73df', '#e74a3b']
-        );
-    
-        // Employee Pie Chart
-        renderEmployeePieChart(
-            document.getElementById('employeePieChart').getContext('2d'),
-            ['Full-time', 'Part-time'],
-            [30, 70],
-            ['#1cc88a', '#f6c23e']
-        );
-    
-        // Shareholder Bar Chart
-        renderShareholderPieChart(
-            document.getElementById('shareholderPieChart').getContext('2d'),
-            ['Shareholder', 'Non-Shareholder'],
-            [45, 55],
-            ['#6f42c1', '#d63384']
-            
-        );
-    
-        // Ethnicity Bar Chart
-        renderEthnicityBarChart(
-            document.getElementById('ethnicityBarChart').getContext('2d'),
-            ['Asian', 'Black', 'White', 'Hispanic', 'Others'],
-            [30, 80, 25, 100, 65]
-        );
-    </script>
+    <script type="module" src="/src/public/vacation-day.js"></script>
 
 </body>
 </html>
