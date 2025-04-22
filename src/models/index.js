@@ -27,14 +27,8 @@ fs
     );
   })
   .forEach(file => {
-    const model = require(path.join(__dirname, file));
-
-    // Nếu model là một class (human) thì tạo mới đối tượng
-    if (model.name === 'Human') {
-      db[model.name] = new model();  // Cần tạo instance mới của Human
-    } else {
-      db[model.name] = model(sequelize, Sequelize.DataTypes);
-    }
+    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
+    db[model.name] = model;
   });
 
 Object.keys(db).forEach(modelName => {
