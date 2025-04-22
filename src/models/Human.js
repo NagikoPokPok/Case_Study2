@@ -1,74 +1,22 @@
-module.exports = (sequelize, DataTypes) => {
-    const Human = sequelize.define('Human', {
-        Employee_Id: {
-            type: DataTypes.INTEGER,
-            primaryKey: true
-        },
-        ShareHolder: {
-            type: DataTypes.BOOLEAN,
-            allowNull: true
-        },
-        Gender: {
-            type: DataTypes.STRING,
-            allowNull: true
-        },
-        Ethnicity: {
-            type: DataTypes.STRING,
-            allowNull: true
-        },
-        Employment_Status: {
-            type: DataTypes.STRING,
-            allowNull: true
-        },
-        Department: {
-            type: DataTypes.STRING,
-            allowNull: true
-        },
-        Paid_To_Date: {
-            type: DataTypes.DECIMAL(10,2),
-            allowNull: true
-        },
-        Paid_Last_Year: {
-            type: DataTypes.DECIMAL(10,2),
-            allowNull: true
-        },
-        Vacation_Days: {
-            type: DataTypes.INTEGER,
-            allowNull: true
-        },
-        Benefit_Plan: {
-            type: DataTypes.INTEGER,
-            allowNull: true
-        },
-        Benefit_Plan_Avg: {
-            type: DataTypes.DECIMAL(10,2),
-            allowNull: true
-        },
-        // Added fields based on the calculation requirements
-        Tax_Percentage: {
-            type: DataTypes.DECIMAL(10,2),
-            allowNull: true
-        },
-        Pay_Amount: {
-            type: DataTypes.DECIMAL(10,2),
-            allowNull: true
-        },
-        Deductible: {
-            type: DataTypes.DECIMAL(10,2),
-            allowNull: true
-        },
-        Percentage_Copay: {
-            type: DataTypes.INTEGER,
-            allowNull: true
-        },
-        Total_Earning: {
-            type: DataTypes.DECIMAL(10,2),
-            allowNull: true
-        }
-    }, {
-        
-        timestamps: false
-    });
+class Human {
+    constructor(data) {
+        this.Employee_Id = data.Employee_Id;
+        this.ShareHolder = data.ShareHolder;
+        this.Gender = data.Gender;
+        this.Ethnicity = data.Ethnicity;
+        this.Employment_Status = data.Employment_Status;
+        this.Department = data.Department;
+        this.Paid_To_Date = data.Paid_To_Date;
+        this.Paid_Last_Year = data.Paid_Last_Year;
+        this.Vacation_Days = data.Vacation_Days;
+        this.Benefit_Plan = data.Benefit_Plan;
+        this.Total_Earning = this.calculateTotalEarning();
+    }
 
-    return Human;
-};
+    calculateTotalEarning() {
+        // Logic tính toán Total_Earning
+        return this.Paid_To_Date + this.Paid_Last_Year;
+    }
+}
+
+module.exports = Human;

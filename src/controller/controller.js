@@ -1,41 +1,20 @@
 // controllers/employeeController.js
-const { getEmployeesFromMySQLService, getEmployeesFromSQLServerService, getPersonalFromSQLServerService} = require('../service/service');
+const { 
+  getHumanDataService  
+} = require('../service/service');
 
-// Lấy dữ liệu từ MySQL
-async function getEmployeesFromMySQL(req, res) {
-  try {
-    const employees = await getEmployeesFromMySQLService();
-    res.json(employees);
-  } catch (error) {
-    console.error('Lỗi MySQL:', error);
-    res.status(500).send('Lỗi khi truy vấn dữ liệu MySQL');
-  }
-}
 
-// Lấy dữ liệu từ SQL Server
-async function getEmployeesFromSQLServer(req, res) {
-  try {
-    const employees = await getEmployeesFromSQLServerService();
-    res.json(employees);
-  } catch (error) {
-    console.error('Lỗi SQL Server:', error);
-    res.status(500).send('Lỗi khi truy vấn dữ liệu SQL Server');
-  }
-}
-
-// Lấy dữ liệu từ SQL Server (Personal)
-async function getPersonalFromSQLServer(req, res) {
-
+async function getHumanData(req, res) {
   const limit = parseInt(req.query.limit) || 1000;  // Số dòng mỗi trang
-  const offset = parseInt(req.query.offset) || 0;  // Vị trí bắt đầu
+  const lastId = parseInt(req.query.lastId) || 0;
 
   try {
-    const personalData = await getPersonalFromSQLServerService(limit, offset);
-    res.json(personalData);
+      const humans = await getHumanDataService(limit, lastId);
+      res.json(humans);
   } catch (error) {
-    console.error('Lỗi SQL Server:', error);
-    res.status(500).send('Lỗi khi truy vấn dữ liệu Personal từ SQL Server');
+      console.error('Human Data Error:', error);
+      res.status(500).send('Lỗi khi truy vấn dữ liệu Human');
   }
 }
 
-module.exports = { getEmployeesFromMySQL, getEmployeesFromSQLServer, getPersonalFromSQLServer };
+module.exports = {  getHumanData };

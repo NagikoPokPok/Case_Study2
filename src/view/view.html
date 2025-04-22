@@ -1,172 +1,142 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Employee List</title>
+    <title>Human Data Stream</title>
+    <style>
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 20px;
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 8px; 
+            text-align: left;
+        }
+        th { 
+            position: sticky; 
+            top: 0; 
+            background: #f8f9fa;
+            z-index: 1;
+        }
+        .stats-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 2;
+        }
+        .batch-divider {
+            background: #f0f0f0;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .loading {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <h1>Danh sách nhân viên</h1>
-    <h2>MySQL Employees</h2>
-    <table style="border: 1;" id="mysqlEmployeeTable">
-        <thead>
-            <tr>
-                <th>Employee Number</th>
-                <th>First Name</th>
-                <th>Last Name</th>
-                <th>Pay Rate</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-
-    <h2>SQL Server Employees</h2>
-    <table border="1" id="sqlserverEmployeeTable">
-        <thead>
-            <tr>
-                <th>Employee Number</th>
-                <th>First Name</th>
-                <th>Last Name</th>
-                <th>Pay Rate</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-
-    <div>
-        <!-- Nút Previous và Next -->
-        <button id="prevButton" disabled>Previous</button>
-        <button id="nextButton">Next</button>
+    <div class="stats-panel">
+        <div>Total Records: <span id="totalRecords">0</span></div>
+        <div>Current Batch: <span id="currentBatch">0</span></div>
+        <div>Query Time: <span id="queryTime">0</span>ms</div>
     </div>
 
+    <div id="loading" class="loading">Loading batch...</div>
+
+    <div id="dataContainer"></div>
+
     <script>
-        // Fetch dữ liệu từ MySQL
-        fetch('http://localhost:3000/api/employee/mysql')
-            .then(response => response.json())
-            .then(data => {
-                const tableBody = document.querySelector('#mysqlEmployeeTable tbody');
-                data.forEach(emp => {
-                    const row = `
-                        <tr>
-                            <td>${emp.idEmployee}</td>
-                            <td>${emp.Paid_To_Date}</td>
-                            <td>${emp.Paid_Last_Year}</td>
-                            <td>${emp.Vacation_Days}</td>
-                        </tr>`;
-                    tableBody.innerHTML += row;
-                });
-            })
-            .catch(error => console.error('Lỗi khi lấy dữ liệu từ MySQL:', error));
+        let lastId = 0;
+        const BATCH_SIZE = 1000;
+        let isLoading = false;
+        let hasMore = true;
+        let batchCount = 0;
+        let totalRecords = 0;
 
-        // // Fetch dữ liệu từ SQL Server
-        // fetch('http://localhost:3000/api/employee/personal/sqlserver')
-        //     .then(response => response.json())
-        //     .then(data => {
-        //         const tableBody = document.querySelector('#sqlserverEmployeeTable tbody');
-        //         data.forEach(emp => {
-        //             // console.log(emp);
-        //             const row = `
-        //                 <tr>
-        //                     <td>${emp.Employee_ID}</td>
-        //                     <td>${emp.First_Name}</td>
-        //                     <td>${emp.Gender}</td>
-        //                     <td>${emp.Shareholder_Status}</td>
-        //                 </tr>`;
-        //             tableBody.innerHTML += row;
-        //         });
-        //     })
-        //     .catch(error => console.error('Lỗi khi lấy dữ liệu từ SQL Server:', error));
+        async function loadData() {
+            if (isLoading || !hasMore) return;
+            isLoading = true;
+            document.getElementById('loading').style.display = 'block';
 
-        // let offset = 0;
-        // const limit = 1000;  // Lấy 100 dòng mỗi lần
+            try {
+                const response = await fetch(`http://localhost:3000/api/employee/human?limit=${BATCH_SIZE}&lastId=${lastId}`);
+                const result = await response.json();
 
-        // window.addEventListener('scroll', function() {
-        // if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
-        //     // Khi người dùng cuộn xuống cuối trang, tải thêm dữ liệu
-        //     loadMoreData();
-        // }
-        // });
+                if (result.data && result.data.length > 0) {
+                    batchCount++;
+                    totalRecords += result.data.length;
 
-        // function loadMoreData() {
-        //     fetch(`http://localhost:3000/api/employee/personal/sqlserver?limit=${limit}&offset=${offset}`)
-        //         .then(response => response.json())
-        //         .then(data => {
-        //             const tableBody = document.querySelector('#sqlserverEmployeeTable tbody');
-        //             data.forEach(emp => {
-        //                 const row = `
-        //                     <tr>
-        //                         <td>${emp.Employee_ID}</td>
-        //                         <td>${emp.First_Name}</td>
-        //                         <td>${emp.Gender}</td>
-        //                         <td>${emp.Shareholder_Status}</td>
-        //                     </tr>`;
-        //                 tableBody.innerHTML += row;
-        //             });
+                    // Create new table for this batch
+                    const batchContainer = document.createElement('div');
+                    batchContainer.innerHTML = `
+                        <div class="batch-divider">
+                            Batch #${batchCount} (${result.data.length} records) 
+                            - Query Time: ${result.stats?.queryTime || 'N/A'}ms
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Gender</th>
+                                    <th>Department</th>
+                                    <th>Status</th>
+                                    <th>Total Earning</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${result.data.map(human => `
+                                    <tr>
+                                        <td>${human.Employee_Id || '-'}</td>
+                                        <td>${human.Gender || '-'}</td>
+                                        <td>${human.Department || '-'}</td>
+                                        <td>${human.Employment_Status || '-'}</td>
+                                        <td>${human.Total_Earning?.toLocaleString() || '0'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
 
-        //             offset += limit;  // Cập nhật offset
-        //         })
-        //         .catch(error => console.error('Lỗi khi lấy dữ liệu từ SQL Server:', error));
-        // }
+                    document.getElementById('dataContainer').appendChild(batchContainer);
+                    
+                    // Update stats
+                    document.getElementById('totalRecords').textContent = totalRecords;
+                    document.getElementById('currentBatch').textContent = batchCount;
+                    document.getElementById('queryTime').textContent = result.stats?.queryTime || 'N/A';
 
-        // // Gọi loadMoreData lần đầu khi trang được tải
-        // loadMoreData();
+                    lastId = result.nextLastId;
+                    hasMore = result.hasMore;
 
-        let offset = 0;
-        const limit = 100;  // Lấy 100 dòng mỗi lần
-
-        // Fetch dữ liệu với phân trang
-        function loadData() {
-            fetch(`http://localhost:3000/api/employee/personal/sqlserver?limit=${limit}&offset=${offset}`)
-                .then(response => response.json())
-                .then(data => {
-                    const tableBody = document.querySelector('#sqlserverEmployeeTable tbody');
-                    tableBody.innerHTML = '';  // Xóa dữ liệu cũ trước khi hiển thị mới
-                    data.forEach(emp => {
-                        const row = `
-                            <tr>
-                                <td>${emp.Employee_ID}</td>
-                                <td>${emp.First_Name}</td>
-                                <td>${emp.Gender}</td>
-                                <td>${emp.Shareholder_Status}</td>
-                            </tr>`;
-                        tableBody.innerHTML += row;
-                    });
-
-                    // Cập nhật trạng thái nút
-                    updateButtons();
-                })
-                .catch(error => console.error('Lỗi khi lấy dữ liệu từ SQL Server:', error));
-        }
-
-        // Cập nhật trạng thái của các nút Previous và Next
-        function updateButtons() {
-            // Nút Previous bị vô hiệu hóa nếu offset là 0
-            document.getElementById('prevButton').disabled = (offset <= 0);
-
-            // Giả sử dữ liệu tổng cộng không quá lớn, nếu offset + limit >= total records, vô hiệu hóa nút Next
-            // Thực tế bạn có thể có một API trả về tổng số bản ghi để xác định có dữ liệu tiếp theo hay không
-            // Đoạn này giả định rằng bạn có thể kiểm tra dữ liệu trong server hoặc sử dụng giá trị offset và limit hợp lý
-            // Bạn có thể thêm một tham số `totalRecords` từ API nếu cần
-
-            // Giả sử bạn có thể tính toán tổng số bản ghi, ví dụ 500.000 dòng
-            const totalRecords = 500000;
-            document.getElementById('nextButton').disabled = (offset + limit >= totalRecords);
-        }
-
-        // Nút Load More (Next)
-        document.getElementById('nextButton').addEventListener('click', () => {
-            offset += limit; // Tăng offset khi chuyển sang trang tiếp theo
-            loadData();
-        });
-
-        // Nút Previous
-        document.getElementById('prevButton').addEventListener('click', () => {
-            if (offset - limit >= 0) {
-                offset -= limit; // Giảm offset khi quay lại trang trước
-                loadData();
+                    // Auto-load next batch after a short delay
+                    if (hasMore) {
+                        setTimeout(loadData, 1000);
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                isLoading = false;
+                document.getElementById('loading').style.display = 'none';
             }
-        });
+        }
 
-        // Gọi loadData lần đầu khi trang được tải
+        // Start loading when page loads
         loadData();
     </script>
 </body>
