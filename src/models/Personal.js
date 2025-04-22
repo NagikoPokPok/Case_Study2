@@ -1,11 +1,13 @@
+const Employee = require("./Employee");
+
 // models/Personal.js
 module.exports = (sequelize, DataTypes) => {
     const Personal = sequelize.define('Personal', {
-      personal_id: { type: DataTypes.INTEGER, primaryKey: true },
-      name: DataTypes.STRING,
-      gender: DataTypes.STRING,
-      ethnicity: DataTypes.STRING,
-      is_shareholder: DataTypes.BOOLEAN
+      Employee_ID: { type: DataTypes.INTEGER, primaryKey: true },
+      First_Name: DataTypes.STRING,
+      Gender: DataTypes.STRING,
+      Ethnicity: DataTypes.STRING,
+      Shareholder_Status: DataTypes.BOOLEAN
     }, {
       tableName: 'Personal',
       timestamps: false

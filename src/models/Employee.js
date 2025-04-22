@@ -1,12 +1,12 @@
 // models/Employee.js
 module.exports = (sequelize, DataTypes) => {
     const Employee = sequelize.define('Employee', {
-      employee_id: { type: DataTypes.INTEGER, primaryKey: true },
-      paid_to_date: DataTypes.FLOAT,
-      paid_last_year: DataTypes.FLOAT,
-      vacation_days: DataTypes.INTEGER
+      idEmployee: { type: DataTypes.INTEGER, primaryKey: true },
+      Paid_To_Date: DataTypes.FLOAT,
+      Paid_Last_Year: DataTypes.FLOAT,
+      Vacation_Days: DataTypes.INTEGER
     }, {
-      tableName: 'Employee',
+      tableName: 'employee',
       timestamps: false
     });
   

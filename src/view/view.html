@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Employee List</title>
+</head>
+<body>
+    <h1>Danh sách nhân viên</h1>
+    <h2>MySQL Employees</h2>
+    <table style="border: 1;" id="mysqlEmployeeTable">
+        <thead>
+            <tr>
+                <th>Employee Number</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Pay Rate</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <h2>SQL Server Employees</h2>
+    <table border="1" id="sqlserverEmployeeTable">
+        <thead>
+            <tr>
+                <th>Employee Number</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Pay Rate</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <div>
+        <!-- Nút Previous và Next -->
+        <button id="prevButton" disabled>Previous</button>
+        <button id="nextButton">Next</button>
+    </div>
+
+    <script>
+        // Fetch dữ liệu từ MySQL
+        fetch('http://localhost:3000/api/employee/mysql')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.querySelector('#mysqlEmployeeTable tbody');
+                data.forEach(emp => {
+                    const row = `
+                        <tr>
+                            <td>${emp.idEmployee}</td>
+                            <td>${emp.Paid_To_Date}</td>
+                            <td>${emp.Paid_Last_Year}</td>
+                            <td>${emp.Vacation_Days}</td>
+                        </tr>`;
+                    tableBody.innerHTML += row;
+                });
+            })
+            .catch(error => console.error('Lỗi khi lấy dữ liệu từ MySQL:', error));
+
+        // // Fetch dữ liệu từ SQL Server
+        // fetch('http://localhost:3000/api/employee/personal/sqlserver')
+        //     .then(response => response.json())
+        //     .then(data => {
+        //         const tableBody = document.querySelector('#sqlserverEmployeeTable tbody');
+        //         data.forEach(emp => {
+        //             // console.log(emp);
+        //             const row = `
+        //                 <tr>
+        //                     <td>${emp.Employee_ID}</td>
+        //                     <td>${emp.First_Name}</td>
+        //                     <td>${emp.Gender}</td>
+        //                     <td>${emp.Shareholder_Status}</td>
+        //                 </tr>`;
+        //             tableBody.innerHTML += row;
+        //         });
+        //     })
+        //     .catch(error => console.error('Lỗi khi lấy dữ liệu từ SQL Server:', error));
+
+        // let offset = 0;
+        // const limit = 1000;  // Lấy 100 dòng mỗi lần
+
+        // window.addEventListener('scroll', function() {
+        // if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
+        //     // Khi người dùng cuộn xuống cuối trang, tải thêm dữ liệu
+        //     loadMoreData();
+        // }
+        // });
+
+        // function loadMoreData() {
+        //     fetch(`http://localhost:3000/api/employee/personal/sqlserver?limit=${limit}&offset=${offset}`)
+        //         .then(response => response.json())
+        //         .then(data => {
+        //             const tableBody = document.querySelector('#sqlserverEmployeeTable tbody');
+        //             data.forEach(emp => {
+        //                 const row = `
+        //                     <tr>
+        //                         <td>${emp.Employee_ID}</td>
+        //                         <td>${emp.First_Name}</td>
+        //                         <td>${emp.Gender}</td>
+        //                         <td>${emp.Shareholder_Status}</td>
+        //                     </tr>`;
+        //                 tableBody.innerHTML += row;
+        //             });
+
+        //             offset += limit;  // Cập nhật offset
+        //         })
+        //         .catch(error => console.error('Lỗi khi lấy dữ liệu từ SQL Server:', error));
+        // }
+
+        // // Gọi loadMoreData lần đầu khi trang được tải
+        // loadMoreData();
+
+        let offset = 0;
+        const limit = 100;  // Lấy 100 dòng mỗi lần
+
+        // Fetch dữ liệu với phân trang
+        function loadData() {
+            fetch(`http://localhost:3000/api/employee/personal/sqlserver?limit=${limit}&offset=${offset}`)
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.querySelector('#sqlserverEmployeeTable tbody');
+                    tableBody.innerHTML = '';  // Xóa dữ liệu cũ trước khi hiển thị mới
+                    data.forEach(emp => {
+                        const row = `
+                            <tr>
+                                <td>${emp.Employee_ID}</td>
+                                <td>${emp.First_Name}</td>
+                                <td>${emp.Gender}</td>
+                                <td>${emp.Shareholder_Status}</td>
+                            </tr>`;
+                        tableBody.innerHTML += row;
+                    });
+
+                    // Cập nhật trạng thái nút
+                    updateButtons();
+                })
+                .catch(error => console.error('Lỗi khi lấy dữ liệu từ SQL Server:', error));
+        }
+
+        // Cập nhật trạng thái của các nút Previous và Next
+        function updateButtons() {
+            // Nút Previous bị vô hiệu hóa nếu offset là 0
+            document.getElementById('prevButton').disabled = (offset <= 0);
+
+            // Giả sử dữ liệu tổng cộng không quá lớn, nếu offset + limit >= total records, vô hiệu hóa nút Next
+            // Thực tế bạn có thể có một API trả về tổng số bản ghi để xác định có dữ liệu tiếp theo hay không
+            // Đoạn này giả định rằng bạn có thể kiểm tra dữ liệu trong server hoặc sử dụng giá trị offset và limit hợp lý
+            // Bạn có thể thêm một tham số `totalRecords` từ API nếu cần
+
+            // Giả sử bạn có thể tính toán tổng số bản ghi, ví dụ 500.000 dòng
+            const totalRecords = 500000;
+            document.getElementById('nextButton').disabled = (offset + limit >= totalRecords);
+        }
+
+        // Nút Load More (Next)
+        document.getElementById('nextButton').addEventListener('click', () => {
+            offset += limit; // Tăng offset khi chuyển sang trang tiếp theo
+            loadData();
+        });
+
+        // Nút Previous
+        document.getElementById('prevButton').addEventListener('click', () => {
+            if (offset - limit >= 0) {
+                offset -= limit; // Giảm offset khi quay lại trang trước
+                loadData();
+            }
+        });
+
+        // Gọi loadData lần đầu khi trang được tải
+        loadData();
+    </script>
+</body>
+</html>
