@@ -12,6 +12,6 @@ logs
 .DS_Store
 Thumbs.db
 
-src/config/config.json
+#src/config/config.json
 
-src/database/sequelizeConnection.js
+#src/database/sequelizeConnection.js

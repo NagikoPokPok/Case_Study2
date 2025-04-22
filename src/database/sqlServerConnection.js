@@ -5,7 +5,7 @@ const sqlConfig = {
   password: 'a123456*',
   database: 'HR',
   server: 'localhost',
-  port: 1434,
+  port: 49853,
   pool: {
     max: 10,
     min: 0,
