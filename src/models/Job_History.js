@@ -1,8 +1,14 @@
 // models/JobHistory.js
 module.exports = (sequelize, DataTypes) => {
     const JobHistory = sequelize.define('Job_History', {
-      personal_id: DataTypes.INTEGER,
-      department: DataTypes.STRING,
+      Employee_ID: {
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'Personal',
+          key: 'Employee_ID' 
+        }
+      },
+      Department: DataTypes.STRING,
       // Các field khác nếu cần
     }, {
       tableName: 'Job_History',
