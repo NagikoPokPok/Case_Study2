@@ -5,10 +5,10 @@ module.exports = (sequelize, DataTypes) => {
       Paid_To_Date: DataTypes.DECIMAL(2, 0),
       Paid_Last_Year: DataTypes.DECIMAL(2, 0),
       Vacation_Days: DataTypes.INTEGER,
-      PayRate_ID: {
+      PayRates_id: {
         type: DataTypes.INTEGER,
         references: {
-          model: 'Pay_Rate',
+          model: 'pay_rates',
           key: 'idPay_Rates' 
         }
       },

@@ -8,11 +8,11 @@ module.exports = (sequelize, DataTypes) => {
       Gender: DataTypes.STRING,
       Ethnicity: DataTypes.STRING,
       Shareholder_Status: DataTypes.BOOLEAN,
-      Benefit_Plan: {
+      Benefit_Plans: {
         type: DataTypes.INTEGER,
         references: {
           model: 'Benefit_Plans',
-          key: 'benefit_plan_id' 
+          key: 'Benefit_Plan_ID' 
         }
     }, 
   },
