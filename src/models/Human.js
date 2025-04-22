@@ -43,9 +43,30 @@ module.exports = (sequelize, DataTypes) => {
         Benefit_Plan_Avg: {
             type: DataTypes.DECIMAL(10,2),
             allowNull: true
+        },
+        // Added fields based on the calculation requirements
+        Tax_Percentage: {
+            type: DataTypes.DECIMAL(10,2),
+            allowNull: true
+        },
+        Pay_Amount: {
+            type: DataTypes.DECIMAL(10,2),
+            allowNull: true
+        },
+        Deductible: {
+            type: DataTypes.DECIMAL(10,2),
+            allowNull: true
+        },
+        Percentage_Copay: {
+            type: DataTypes.INTEGER,
+            allowNull: true
+        },
+        Total_Earning: {
+            type: DataTypes.DECIMAL(10,2),
+            allowNull: true
         }
     }, {
-        tableName: 'Human',
+        
         timestamps: false
     });
 
