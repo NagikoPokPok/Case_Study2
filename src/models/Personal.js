@@ -20,6 +20,32 @@ module.exports = (sequelize, DataTypes) => {
       tableName: 'Personal',
       timestamps: false
     });
+
+    Personal.associate = function(models) {
+      // Đảm bảo các models được truyền vào đúng
+      if (models.Benefit_Plans) {
+          Personal.belongsTo(models.Benefit_Plans, {
+              foreignKey: 'Benefit_Plans',
+              targetKey: 'Benefit_Plan_ID',
+              as: 'BenefitPlan'
+          });
+      }
+      
+      if (models.Employment) {
+          Personal.hasOne(models.Employment, {
+              foreignKey: 'Employee_ID',
+              sourceKey: 'Employee_ID'
+          });
+      }
+
+      if (models.Job_History) {
+        Personal.hasMany(models.Job_History, {
+            foreignKey: 'Employee_ID',
+            sourceKey: 'Employee_ID',
+            as: 'JobHistory'
+        });
+    }
+  };
   
     return Personal;
   };

@@ -16,6 +16,14 @@ module.exports = (sequelize, DataTypes) => {
       tableName: 'employee',
       timestamps: false
     });
+
+    Employee.associate = function(models) {
+      Employee.belongsTo(models.Pay_Rate, {
+          foreignKey: 'PayRates_id',
+          targetKey: 'idPay_Rates'
+      });
+  };
+
   
     return Employee;
   };

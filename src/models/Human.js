@@ -10,12 +10,14 @@ class Human {
         this.Paid_Last_Year = data.Paid_Last_Year;
         this.Vacation_Days = data.Vacation_Days;
         this.Benefit_Plan = data.Benefit_Plan;
+        this.Average_Plan_Benefit = data.Average_Plan_Benefit;
+        this.Pay_Amount = data.Pay_Amount;
+        this.Tax_Percentage = data.Tax_Percentage;
         this.Total_Earning = this.calculateTotalEarning();
     }
 
     calculateTotalEarning() {
-        // Logic tính toán Total_Earning
-        return this.Paid_To_Date + this.Paid_Last_Year;
+        return (this.Pay_Amount * this.Tax_Percentage) / 100;
     }
 }
 
