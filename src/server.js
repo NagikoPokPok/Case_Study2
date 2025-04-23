@@ -2,10 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const db = require('./models'); // Sequelize (MySQL)
 const { connectSqlServer } = require('./database/sqlServerConnection');
-const { getEmployeeSummary } = require('./controller/controller');  // Import controller
+const { getHumanData } = require('./controller/controller');  // Import controller
 
 //route
-const employeeRoute = require('./route/route');
+const route = require('./route/route');
 
 //Human merge
 let Humans;
@@ -14,10 +14,13 @@ const app = express();
 app.use(cors()); // Cho phép truy cập từ FE
 
 //use route
-app.use('/api/employee', employeeRoute);
-// // Route lấy dữ liệu tóm tắt nhân viên
-app.get('/api/employee-summary', employeeRoute);
-// app.use('/api/employee-summary', employeeRoute);
+app.use('/api/route', route);
+
+
+// Định nghĩa API trả về dữ liệu này
+app.get('/api/humanList', (req, res) => {
+  res.json(Humans); // Trả về mảng dữ liệu dưới dạng JSON
+});
 
 // API lấy dữ liệu employee
 app.get('/api/employee', async (req, res) => {
@@ -35,7 +38,7 @@ app.get('/api/employee', async (req, res) => {
 async function calculateOnServerStart() {
   try {
     // Lấy dữ liệu tóm tắt nhân viên và tính toán ngay khi server khởi động
-    Humans = await getEmployeeSummary({ query: { limit: 100, offset: 0 } }, { json: console.log });  // Trả về kết quả tính toán ngay
+    Humans = await getHumanData({ query: { limit: 5000, offset: 0 } }, { json: console.log });  // Trả về kết quả tính toán ngay
   } catch (err) {
     console.error('🚨 Error while calculating data on server start:', err);
   }

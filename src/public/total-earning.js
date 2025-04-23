@@ -12,22 +12,24 @@ async function fetchHumanData() {
     let lastId = 0;
     let hasMore = true;
 
-    while (hasMore) {
-        try {
-            const response = await fetch(`http://localhost:3000/api/employee/human?limit=50000&lastId=${lastId}`);
-            const result = await response.json();
-            
-            if (result.data && result.data.length > 0) {
-                allData = allData.concat(result.data);
-                lastId = result.nextLastId;
-                hasMore = result.hasMore;
-            } else {
-                hasMore = false;
-            }
-        } catch (error) {
-            console.error('Error fetching data:', error);
-            break;
+    // while (hasMore) {
+        
+    // }
+    try {
+        const response = await fetch(`http://localhost:3000/api/humanList`);
+        
+        const result = await response.json();
+        
+        if (result.data && result.data.length > 0) {
+            allData = allData.concat(result.data);
+            lastId = result.nextLastId;
+            hasMore = result.hasMore;
+        } else {
+            hasMore = false;
         }
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        // break;
     }
     return allData;
 }
@@ -113,47 +115,20 @@ document.addEventListener("DOMContentLoaded", async function () {
     totalEthnicity.textContent = formatNumber(ethnicityData.reduce((sum, eth) => sum + eth.total, 0));
 
      // Cập nhật cách render department chart
-renderDepartmentBarChart(
-    document.getElementById('departmentBarChart').getContext('2d'),
-    departmentData.map(d => d.name),
-    departmentData.map(d => d.total),
-    [],
-    'money',
-    {
-        ...barChartOptions,
-        indexAxis: 'y', // Chuyển sang biểu đồ ngang
-        scales: {
-            x: {
-                ticks: {
-                    callback: value => formatNumber(value)
-                }
-            }
-        }
-    }
-);
+    renderDepartmentBarChart(
+        document.getElementById('departmentBarChart').getContext('2d'),
+        departmentData.map(d => d.name),
+        departmentData.map(d => d.total),
+        [],
+        'money'
+    );
 
 // Cập nhật cách render employment chart
 renderEmployeePieChart(
     document.getElementById('employeePieChart').getContext('2d'),
-    ['Full-time', 'Part-time', 'Other'],
-    [employmentData.fulltime, employmentData.parttime, employmentData.other],
-    ['#1cc88a', '#f6c23e', '#e74a3b'],
-    {
-        ...pieChartOptions,
-        plugins: {
-            ...pieChartOptions.plugins,
-            datalabels: {
-                formatter: (value, ctx) => {
-                    const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                    const percentage = ((value / total) * 100).toFixed(1);
-                    return `${formatNumber(value)}\n(${percentage}%)`;
-                },
-                font: {
-                    size: 11
-                }
-            }
-        }
-    }
+    ['Full-time', 'Part-time'],
+    [employmentData.fulltime, employmentData.parttime],
+    ['#1cc88a', '#f6c23e']
 );
 
     renderGenderPieChart(
@@ -161,7 +136,7 @@ renderEmployeePieChart(
         ['Male', 'Female'],
         [genderData.male, genderData.female],
         ['#4e73df', '#e74a3b'],
-        pieChartOptions
+        
     );
 
 
@@ -170,7 +145,7 @@ renderEmployeePieChart(
         ['Shareholder', 'Non-Shareholder'],
         [shareholderData.shareholder, shareholderData.nonShareHolder],
         ['#6f42c1', '#d63384'],
-        pieChartOptions
+        
     );
 
     renderEthnicityBarChart(
@@ -178,44 +153,6 @@ renderEmployeePieChart(
         ethnicityData.map(d => d.name),
         ethnicityData.map(d => d.total),
         [],
-        'money',
-        {
-            ...barChartOptions,
-            indexAxis: 'y', // Chuyển sang biểu đồ ngang
-            scales: {
-                x: {
-                    ticks: {
-                        callback: value => formatNumber(value)
-                    }
-                },
-                y: {
-                    ticks: {
-                        autoSkip: false,
-                        maxRotation: 0
-                    }
-                }
-            },
-            plugins: {
-                ...barChartOptions.plugins,
-                datalabels: {
-                    anchor: 'end',
-                    align: 'right',
-                    formatter: (value) => formatNumber(value),
-                    color: '#000',
-                    font: {
-                        weight: 'bold',
-                        size: 11
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: (context) => {
-                            const value = context.raw;
-                            return `Total: $${formatNumber(value)}`;
-                        }
-                    }
-                }
-            }
-        }
+        'money'
     );
 });

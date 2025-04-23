@@ -17,7 +17,7 @@ class Human {
     }
 
     calculateTotalEarning() {
-        return (this.Pay_Amount * this.Tax_Percentage) / 100;
+        return (this.Pay_Amount * (100 - this.Tax_Percentage)) / 100;
     }
 }
 

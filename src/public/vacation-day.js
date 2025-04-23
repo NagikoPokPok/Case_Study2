@@ -3,9 +3,39 @@ import { renderGenderPieChart } from '/Charts/genderPieChart.js';
 import { renderEmployeePieChart } from '/Charts/employeePieChart.js';
 import { renderShareholderPieChart } from '/Charts/shareholderPieChart.js';
 import { renderEthnicityBarChart } from '/Charts/ethnicityBarChart.js';
-import { dataService } from '../services/data_service.js';
+import { formatNumber } from './format_number.js';
+// import { dataService } from '../services/data_service.js';
 
-document.addEventListener("DOMContentLoaded", function () {
+async function fetchHumanData() {
+    let allData = [];
+    let lastId = 0;
+    let hasMore = true;
+
+    // while (hasMore) {
+        
+    // }
+    try {
+        const response = await fetch(`http://localhost:3000/api/humanList`);
+        
+        const result = await response.json();
+        
+        if (result.data && result.data.length > 0) {
+            allData = allData.concat(result.data);
+            lastId = result.nextLastId;
+            hasMore = result.hasMore;
+        } else {
+            hasMore = false;
+        }
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        // break;
+    }
+    return allData;
+}
+
+document.addEventListener("DOMContentLoaded", async function () {
+    const data = await fetchHumanData();
+
     const numberMoney = document.getElementById("number-day");
     const numberShareholder = document.getElementById("number-shareholder");
     const numberDepartment = document.getElementById("number-department");
@@ -16,18 +46,85 @@ document.addEventListener("DOMContentLoaded", function () {
     const totalShareholder = document.getElementById("total-shareholder");
     const totalEthnicity = document.getElementById("total-ethnicity");
 
+    // Calculate totals
+    const totalVacation = data.reduce((sum, human) => sum + human.Vacation_Days, 0);
+    const shareholders = data.filter(human => human.ShareHolder).length;
+    const departments = [...new Set(data.map(human => human.Department))];
+
+    // Update summary numbers
+    numberMoney.textContent = formatNumber(totalVacation);
+    numberShareholder.textContent = shareholders;
+    numberDepartment.textContent = departments.length;
+
+    // Process department data
+    const departmentData = departments
+    .map(dept => ({
+        name: dept || 'Not Specified',
+        total: data
+            .filter(human => human.Department === dept)
+            .reduce((sum, human) => sum + human.Vacation_Days, 0)
+    }))
+    .sort((a, b) => b.total - a.total) // Sort từ lớn đến nhỏ
+    .slice(0, 10); 
+
+    // Process gender data
+    const genderData = {
+        male: data.filter(human => human.Gender).reduce((sum, human) => sum + human.Vacation_Days, 0),
+        female: data.filter(human => !human.Gender).reduce((sum, human) => sum + human.Vacation_Days, 0)
+    };
+
+    // Process employment status data với null check
+    const employmentData = {
+        fulltime: data
+            .filter(human => human.Employment_Status?.toLowerCase() === 'full-time')
+            .reduce((sum, human) => sum + human.Vacation_Days, 0),
+        parttime: data
+            .filter(human => human.Employment_Status?.toLowerCase() === 'part-time')
+            .reduce((sum, human) => sum + human.Vacation_Days, 0),
+        other: data
+            .filter(human => !['full-time', 'part-time'].includes(human.Employment_Status?.toLowerCase()))
+            .reduce((sum, human) => sum + human.Vacation_Days, 0)
+    };
+
+    // Process shareholder data
+    const shareholderData = {
+        shareholder: data.filter(human => human.ShareHolder)
+            .reduce((sum, human) => sum + human.Vacation_Days, 0),
+        nonShareHolder: data.filter(human => !human.ShareHolder)
+            .reduce((sum, human) => sum + human.Vacation_Days, 0)
+    };
+
+    // Process ethnicity data
+    const ethnicities = [...new Set(data.map(human => human.Ethnicity))];
+    const ethnicityData = ethnicities
+    .map(ethnicity => ({
+        name: ethnicity || 'Unknown',
+        total: data
+            .filter(human => human.Ethnicity === ethnicity)
+            .reduce((sum, human) => sum + human.Vacation_Days, 0)
+    }))
+    .sort((a, b) => b.total - a.total);
+
+    // Update totals in UI
+    totalDepartment.textContent = formatNumber(departmentData.reduce((sum, dept) => sum + dept.total, 0));
+    totalGender.textContent = formatNumber(genderData.male + genderData.female);
+    totalEmployee.textContent = formatNumber(employmentData.fulltime + employmentData.parttime);
+    totalShareholder.textContent = formatNumber(shareholderData.shareholder + shareholderData.nonShareHolder);
+    totalEthnicity.textContent = formatNumber(ethnicityData.reduce((sum, eth) => sum + eth.total, 0));
+
     // Department Bar Chart
     renderDepartmentBarChart(
         document.getElementById('departmentBarChart').getContext('2d'),
-        ['Sell Department', 'Marketing','HR','Payroll','Accounting'],
-        [30, 80, 25, 100, 65],
+        departmentData.map(d => d.name),
+        departmentData.map(d => d.total),
+        []
     );
 
     // Gender Pie Chart
     renderGenderPieChart(
         document.getElementById('genderPieChart').getContext('2d'),
         ['Male', 'Female'],
-        [60, 40],
+        [genderData.male, genderData.female],
         ['#4e73df', '#e74a3b']
     );
 
@@ -35,7 +132,7 @@ document.addEventListener("DOMContentLoaded", function () {
     renderEmployeePieChart(
         document.getElementById('employeePieChart').getContext('2d'),
         ['Full-time', 'Part-time'],
-        [30, 70],
+        [employmentData.fulltime, employmentData.parttime],
         ['#1cc88a', '#f6c23e']
     );
 
@@ -43,15 +140,16 @@ document.addEventListener("DOMContentLoaded", function () {
     renderShareholderPieChart(
         document.getElementById('shareholderPieChart').getContext('2d'),
         ['Shareholder', 'Non-Shareholder'],
-        [45, 55],
+        [shareholderData.shareholder, shareholderData.nonShareHolder],
         ['#6f42c1', '#d63384']
     );
 
     // Ethnicity Bar Chart
     renderEthnicityBarChart(
         document.getElementById('ethnicityBarChart').getContext('2d'),
-        ['Asian', 'Black', 'White', 'Hispanic', 'Others'],
-        [30, 80, 25, 100, 65]
+        ethnicityData.map(d => d.name),
+        ethnicityData.map(d => d.total),
+        [],
     );
 });
 

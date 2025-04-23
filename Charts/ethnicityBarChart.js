@@ -67,6 +67,6 @@ export function renderEthnicityBarChart(ctx, labels, data, colors, type) {
                 }
             }
         },
-        plugins: [ChartDataLabels]
+        // plugins: [ChartDataLabels]
     });
 }
