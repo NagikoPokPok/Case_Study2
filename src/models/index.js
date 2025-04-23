@@ -23,6 +23,7 @@ fs
       file.indexOf('.') !== 0 &&
       file !== basename &&
       file.slice(-3) === '.js' &&
+      file !== 'Human.js' && // Thêm điều kiện loại trừ Human.js
       file.indexOf('.test.js') === -1
     );
   })
@@ -30,6 +31,9 @@ fs
     const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
     db[model.name] = model;
   });
+
+// Thêm Human class riêng
+db.Human = require('./Human');
 
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {
