@@ -17,6 +17,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
 
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 <body>
 
@@ -246,6 +248,55 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 
     <script type="module" src="/src/public/total-earning.js"></script>
+
+    <script>
+        let socket;
+        const messageHistoryKey = 'messageHistory'; // Key lưu trữ thông báo trong localStorage
+
+        // Lấy thông báo đã lưu trong localStorage
+        let messageHistory = JSON.parse(localStorage.getItem(messageHistoryKey)) || []; 
+
+        // Hàm hiển thị thông báo
+        function displayMessages() {
+            console.log('Displaying messages:', messageHistory);
+        }
+
+        // Hàm khởi tạo WebSocket và kết nối lại nếu bị mất
+        function initSocket() {
+            socket = io('http://localhost:3000'); // Kết nối đến WebSocket server
+
+            socket.on('benefitPlanUpdated', (data) => {
+                console.log('Received from WebSocket:', data.message);
+                // Lưu thông điệp mới vào history và hiển thị tất cả thông điệp đã nhận
+                messageHistory.push('Benefit Plan: ' + data.message);
+                localStorage.setItem(messageHistoryKey, JSON.stringify(messageHistory)); // Lưu vào localStorage
+                displayMessages();
+            });
+
+            socket.on('personalChanged', (data) => {
+                console.log('Received from WebSocket:', data.message);
+                // Lưu thông điệp mới vào history và hiển thị tất cả thông điệp đã nhận
+                messageHistory.push('Personal Data: ' + data.message);
+                localStorage.setItem(messageHistoryKey, JSON.stringify(messageHistory)); // Lưu vào localStorage
+                displayMessages();
+            });
+
+            socket.on('connect', () => {
+                console.log('WebSocket connected');
+            });
+
+            socket.on('disconnect', () => {
+                console.log('WebSocket disconnected. Reconnecting...');
+                setTimeout(initSocket, 2000);  // Tái kết nối sau 2 giây nếu mất kết nối
+            });
+        }
+
+        // Khởi động kết nối WebSocket ngay khi trang được tải
+        initSocket();
+
+        // Hiển thị thông điệp đã lưu khi tải lại trang
+        displayMessages();
+    </script>
 
 </body>
 </html>
