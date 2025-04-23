@@ -4,6 +4,12 @@ const db = require('./models'); // Sequelize (MySQL)
 const { connectSqlServer } = require('./database/sqlServerConnection');
 const { getHumanData } = require('./controller/controller');  // Import controller
 
+const http = require('http');
+const { Server } = require('socket.io');
+const path = require('path'); // Thêm module path để phục vụ file HTML
+const { startRabbitConsumer, onQueueUpdated } = require('../rabbitReceiver'); // Import consumer
+
+
 //route
 const route = require('./route/route');
 
@@ -12,6 +18,10 @@ let Humans;
 
 const app = express();
 app.use(cors()); // Cho phép truy cập từ FE
+app.use(express.json())
+// Phục vụ trang HTML khi người dùng truy cập vào root
+app.use(express.static(path.join(__dirname))); // Đảm bảo index.html nằm trong thư mục 'public'
+
 
 //use route
 app.use('/api/route', route);
@@ -44,6 +54,43 @@ async function calculateOnServerStart() {
   }
 }
 
+// Tạo server HTTP và kết nối với Socket.io
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
+
+// Start RabbitMQ consumer
+startRabbitConsumer();
+
+// Lắng nghe thông điệp từ các queue và gửi qua WebSocket
+onQueueUpdated('benefit_plan_changes', (message) => {
+    console.log('Emitting to WebSocket from benefit_plan_changes:', message);  // Log thông điệp trước khi phát
+    io.emit('benefitPlanUpdated', { message }); // Emit thông điệp đến frontend qua WebSocket
+});
+
+onQueueUpdated('personal_changes', (message) => {
+    console.log('Emitting to WebSocket from personal_changes:', message);  // Log thông điệp trước khi phát
+    io.emit('personalChanged', { message }); // Emit thông điệp đến frontend qua WebSocket
+});
+
+// Frontend connection via WebSocket
+io.on('connection', (socket) => {
+    console.log('A user connected');  // Log khi có người kết nối WebSocket
+    socket.on('disconnect', () => {
+        console.log('User disconnected');
+    });
+});
+
+// Phục vụ trang HTML (frontend)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html')); // Đảm bảo 'index.html' nằm trong thư mục 'public'
+});
+
+
 async function startApp() {
   try {
     await db.sequelize.authenticate(); // MySql
@@ -65,3 +112,5 @@ async function startApp() {
 }
 
 startApp();
+
+
