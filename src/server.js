@@ -47,8 +47,16 @@ app.get('/api/employee', async (req, res) => {
 // Hàm gọi API tính toán khi server chạy lần đầu
 async function calculateOnServerStart() {
   try {
-    // Lấy dữ liệu tóm tắt nhân viên và tính toán ngay khi server khởi động
-    Humans = await getHumanData({ query: { limit: 5000, offset: 0 } }, { json: console.log });  // Trả về kết quả tính toán ngay
+    // Gọi controller với chỉ request params
+    const result = await getHumanData({ 
+      query: { 
+        limit: 5000, 
+        lastId: 0 
+      }
+    });
+    
+    Humans = result; // Lưu kết quả vào biến Humans
+    
   } catch (err) {
     console.error('🚨 Error while calculating data on server start:', err);
   }
@@ -101,7 +109,6 @@ async function startApp() {
     // Gọi hàm tính toán khi server khởi động
     await calculateOnServerStart();  // Tính toán ngay khi server bắt đầu chạy
 
-    console.log(Humans);
 
     app.listen(3000, () => {
       console.log('✅ Server đang chạy tại http://localhost:3000');
