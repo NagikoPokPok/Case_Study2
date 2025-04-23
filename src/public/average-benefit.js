@@ -1,16 +1,53 @@
 import { renderBenefitBarChart } from '/Charts/benefitBarChart.js';
+import { formatNumber } from './format_number.js';
+import { barChartOptions } from './chart_options.js';
+import { dataService } from '../services/data_service.js';
 
-document.addEventListener("DOMContentLoaded", function () {
-    const numberMoney = document.getElementById("number-money");
-    const numberShareholder = document.getElementById("number-shareholder");
-    const numberDepartment = document.getElementById("number-department");
+
+document.addEventListener("DOMContentLoaded", async function () {
+    try {
+        const data = await dataService.getData();
+
+    // Calculate totals
+    const totalAverageBenefit = data.reduce((sum, human) => sum + (human.Average_Plan_Benefit || 0), 0);
     
-    const totalAverageBenefit= document.getElementById("total-average-benefit");
+    const shareholders = data.filter(human => human.ShareHolder).length;
+    const departments = [...new Set(data.map(human => human.Department))];
 
+    // Update summary numbers
+    document.getElementById("number-money").textContent = formatNumber(totalAverageBenefit);
+    document.getElementById("number-shareholder").textContent = shareholders;
+    document.getElementById("number-department").textContent = departments.length;
+
+    // Process benefit data by departments
+    const benefitData = departments
+        .map(dept => ({
+            name: dept || 'Not Specified',
+            shareholder: data
+                .filter(human => human.Department === dept && human.ShareHolder)
+                .reduce((sum, human) => sum + (human.Average_Plan_Benefit || 0), 0),
+            nonShareholder: data
+                .filter(human => human.Department === dept && !human.ShareHolder)
+                .reduce((sum, human) => sum + (human.Average_Plan_Benefit || 0), 0)
+        }))
+        .sort((a, b) => (b.shareholder + b.nonShareholder) - (a.shareholder + a.nonShareholder))
+        .slice(0, 10);
+
+    // Update total average benefit
+    document.getElementById("total-average-benefit").textContent = formatNumber(totalAverageBenefit);
+
+    // Render benefit chart
     renderBenefitBarChart(
         document.getElementById('benefitBarChart').getContext('2d'),
-        ['Project 1', 'Project 2', 'Project 3', 'Project 4', 'Project 5', 'Project 6', 'Project 7', 'Project 8', 'Project 9', 'Project 10'],
-        [12000, 15000, 9000, 18000, 11000, 17000, 14000, 16000, 13000, 20000], // Shareholder data
-        [10000, 13000, 8000, 15000, 9000, 12000, 11000, 14000, 10000, 17000]   // Non-Shareholder data
+        benefitData.map(d => d.name),
+        benefitData.map(d => d.shareholder),
+        benefitData.map(d => d.nonShareholder),
+        {
+            ...barChartOptions,
+            indexAxis: 'y'
+        }
     );
+    } catch (error) {
+        console.error('Error loading benefit data:', error);
+    }
 });

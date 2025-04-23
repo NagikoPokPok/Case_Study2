@@ -3,6 +3,7 @@ import { renderGenderPieChart } from '/Charts/genderPieChart.js';
 import { renderEmployeePieChart } from '/Charts/employeePieChart.js';
 import { renderShareholderPieChart } from '/Charts/shareholderPieChart.js';
 import { renderEthnicityBarChart } from '/Charts/ethnicityBarChart.js';
+import { dataService } from '../services/data_service.js';
 
 document.addEventListener("DOMContentLoaded", function () {
     const numberMoney = document.getElementById("number-day");

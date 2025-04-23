@@ -5,7 +5,7 @@ const {
 
 
 async function getHumanData(req, res) {
-  const limit = parseInt(req.query.limit) || 1000;  // Số dòng mỗi trang
+  const limit = parseInt(req.query.limit) || 50000;  // Số dòng mỗi trang
   const lastId = parseInt(req.query.lastId) || 0;
 
   try {
