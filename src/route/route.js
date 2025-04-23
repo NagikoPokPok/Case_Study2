@@ -3,6 +3,7 @@ const express = require('express');
 const { 
     getHumanData 
 } = require('../controller/controller');
+const { getEmployeesFromMySQL, getEmployeesFromSQLServer, getPersonalFromSQLServer, getEmployeeSummary  } = require('../controller/controller');
 const router = express.Router();
 
 // // API lấy dữ liệu employee từ MySQL
@@ -14,6 +15,9 @@ const router = express.Router();
 router.get('/human', getHumanData);
 
 // Route cho SQL Server (Personal)
-// router.get('/personal/sqlserver', getPersonalFromSQLServer);
+router.get('/personal/sqlserver', getPersonalFromSQLServer);
+
+// API lấy dữ liệu tóm tắt về nhân viên và các tính toán
+router.get('/employee-summary', getEmployeeSummary);
 
 module.exports = router;

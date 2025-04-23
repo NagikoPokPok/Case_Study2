@@ -6,9 +6,9 @@ module.exports = (sequelize, DataTypes) => {
         references: {
           model: 'Personal',
           key: 'Employee_ID' 
-        }
+        },
       },
-      Employment_status: DataTypes.STRING // part-time or full-time
+      Employment_Status: DataTypes.STRING // part-time or full-time
     }, {
       tableName: 'Employment',
       timestamps: false
