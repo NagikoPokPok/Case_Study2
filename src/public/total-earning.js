@@ -19,6 +19,8 @@ async function fetchHumanData() {
         const response = await fetch(`http://localhost:3000/api/humanList`);
         
         const result = await response.json();
+
+        allData = (result);
         
         if (result.data && result.data.length > 0) {
             allData = allData.concat(result.data);
@@ -37,6 +39,7 @@ async function fetchHumanData() {
 document.addEventListener("DOMContentLoaded", async function () {
     const data = await fetchHumanData();
 
+    console.log('Data:', data);
     // Get DOM elements
     const numberMoney = document.getElementById("number-money");
     const numberShareholder = document.getElementById("number-shareholder");

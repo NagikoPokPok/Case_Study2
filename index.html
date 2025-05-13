@@ -60,7 +60,7 @@
                                 <a href="#" class="btn-box big span4">
                                     <i class="icon-money"></i>
                                     <div class="total-money">
-                                        <b id="number-money">2.400</b>
+                                        <b id="number-money">0</b>
                                         <b class="concurrency">USD</b>
                                     </div>
                                     
@@ -69,13 +69,13 @@
                                     </p>
                                 </a><a href="#" class="btn-box big span4">
                                     <i class="icon-user"></i>
-                                    <b id="number-shareholder">10</b>
+                                    <b id="number-shareholder">0</b>
                                     <p class="text-muted">
                                         Shareholders
                                     </p>
                                 </a><a href="#" class="btn-box big span4">
                                     <i class="icon-home"></i>
-                                    <b id="number-department">5</b>
+                                    <b id="number-department">0</b>
                                     <p class="text-muted">
                                         Department
                                     </p>
@@ -259,11 +259,13 @@
         // Hàm hiển thị thông báo
         function displayMessages() {
             console.log('Displaying messages:', messageHistory);
+            // window.location.reload()
         }
 
         // Hàm khởi tạo WebSocket và kết nối lại nếu bị mất
         function initSocket() {
-            socket = io('http://localhost:3000'); // Kết nối đến WebSocket server
+            try {
+                socket = io('http://localhost:5500'); // Kết nối đến WebSocket server
 
             socket.on('benefitPlanUpdated', (data) => {
                 console.log('Received from WebSocket:', data.message);
@@ -289,6 +291,9 @@
                 console.log('WebSocket disconnected. Reconnecting...');
                 setTimeout(initSocket, 2000);  // Tái kết nối sau 2 giây nếu mất kết nối
             });
+            } catch (error) {
+                
+            }
         }
 
         // Khởi động kết nối WebSocket ngay khi trang được tải

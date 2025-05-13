@@ -1,22 +1,27 @@
-// controllers/employeeController.js
-const { 
-  getHumanDataService
-} = require('../service/service');
-
+const { getHumanDataService } = require('../service/service');
 
 async function getHumanData(req, res) {
-  const limit = parseInt(req.query.limit) || 50000;  // Số dòng mỗi trang
-  const lastId = parseInt(req.query.lastId) || 0;
+  const limit = req?.query?.limit || 50000;
+  const lastId = req?.query?.lastId || 0;
 
   try {
-      const humans = await getHumanDataService(limit, lastId);
-      res.json(humans);
-      return humans; // Trả về dữ liệu cho các hàm khác nếu cần
+    const humans = await getHumanDataService(limit, lastId);
+    
+    if (res) {
+      // Nếu được gọi như API endpoint
+      return res.json(humans);
+    }
+    // Nếu được gọi trực tiếp
+    return humans.data;
+    
   } catch (error) {
-      console.error('Human Data Error:', error);
-      res.status(500).send('Lỗi khi truy vấn dữ liệu Human');
+    console.error('Human Data Error:', error);
+    if (res) {
+      // Nếu được gọi như API endpoint
+      return res.status(500).send('Lỗi khi truy vấn dữ liệu Human');
+    }
+    throw error;
   }
 }
-
 
 module.exports = { getHumanData };
