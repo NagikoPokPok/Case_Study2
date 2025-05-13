@@ -15,7 +15,6 @@ async function fetchHumanData() {
         const response = await fetch(`http://localhost:3000/api/humanList`);
         
         const result = await response.json();
-        allData = (result);
         
         if (result.data && result.data.length > 0) {
             allData = allData.concat(result.data);
