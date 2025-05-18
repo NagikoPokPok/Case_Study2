@@ -3,6 +3,8 @@ const cors = require('cors');
 const db = require('./models'); // Sequelize (MySQL)
 const { connectSqlServer } = require('./database/sqlServerConnection');
 const { getHumanData } = require('./controller/controller');  // Import controller
+const redisClient = require('./utils/redisClient'); // Redis client
+
 
 const http = require('http');
 const { Server } = require('socket.io');
