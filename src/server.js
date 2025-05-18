@@ -48,23 +48,79 @@ app.get('/api/employee', async (req, res) => {
   }
 });
 
+// // Hàm gọi API tính toán khi server chạy lần đầu
+// async function calculateOnServerStart() {
+//   try {
+//     // Gọi controller với chỉ request params
+//     const result = await getHumanData({ 
+//       query: {
+//         limit: 50300, 
+//         lastId: 0 
+//       }
+//     });
+    
+//     Humans = result; // Lưu kết quả vào biến Humans
+//     console.log('Đã cập nhật dữ liệu Humans mới nhất');
+//   } catch (err) {
+//     console.error('🚨 Error while calculating data on server start:', err);
+//   }
+// }
+
 // Hàm gọi API tính toán khi server chạy lần đầu
 async function calculateOnServerStart() {
   try {
-    // Gọi controller với chỉ request params
-    const result = await getHumanData({ 
-      query: {
-        limit: 50300, 
-        lastId: 0 
+    let lastId = 0;
+    let allHumans = [];
+    let batchCount = 0;
+
+    while (batchCount < 20) {
+      const result = await getHumanData({
+        query: {
+          limit: 50000,
+          lastId
+        }
+      });
+      // console.log('Đã tải dữ liệu từ API:', result);
+
+      const dataBatch = result;
+
+      if (!dataBatch || dataBatch.length === 0) {
+        // console.log('⛔ Không còn dữ liệu để tải.');
+        lastId += 50000; // Tăng lastId để tránh vòng lặp vô hạn
+        batchCount++;
+        console.log(`📦 Batch ${batchCount}: Không còn dữ liệu để tải (Tổng: ${allHumans.length}); lastID = ${lastId}`);
+        continue;
       }
-    });
-    
-    Humans = result; // Lưu kết quả vào biến Humans
-    console.log('Đã cập nhật dữ liệu Humans mới nhất');
+
+      allHumans.push(...dataBatch);
+      lastId += 50000; // Tăng lastId để tải dữ liệu tiếp theo 
+      batchCount++;
+
+      console.log(`📦 Batch ${batchCount}: Đã tải thêm ${dataBatch.length} bản ghi (Tổng: ${allHumans.length})`);
+
+      if (lastId === 1000000) {
+        console.log('✅ Đã tải toàn bộ dữ liệu.');
+        break;
+      }
+    }
+
+    Humans = allHumans;
+    console.log(`🏁 Tổng cộng ${Humans.length} bản ghi đã được load vào bộ nhớ`);
+    console.log('✅ Đã cập nhật dữ liệu Humans 776853', Humans[776853]);
+    console.log('✅ Đã cập nhật dữ liệu Humans 500001', Humans[500001]);
+
+    const result1 = await getHumanData({
+        query: {
+          limit: 50000,
+          lastId: 750000
+        }
+      });
+    console.log('✅ Đã cập nhật dữ liệu Humans 750000', result1);
   } catch (err) {
-    console.error('🚨 Error while calculating data on server start:', err);
+    console.error('🚨 Lỗi khi tải dữ liệu Human:', err);
   }
 }
+
 
 // Tạo server HTTP và kết nối với Socket.io
 const server = http.createServer(app);
