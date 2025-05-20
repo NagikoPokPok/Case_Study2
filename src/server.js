@@ -133,25 +133,7 @@ app.get('/api/humanList', async (req, res) => {
     }
 });
 
-// // Hàm gọi API tính toán khi server chạy lần đầu
-// async function calculateOnServerStart() {
-//   try {
-//     // Gọi controller với chỉ request params
-//     const result = await getHumanData({ 
-//       query: {
-//         limit: 50300, 
-//         lastId: 0 
-//       }
-//     });
-    
-//     Humans = result; // Lưu kết quả vào biến Humans
-//     console.log('Đã cập nhật dữ liệu Humans mới nhất');
-//   } catch (err) {
-//     console.error('🚨 Error while calculating data on server start:', err);
-//   }
-// }
-
-// Hàm gọi API tính toán khi server chạy lần đầu
+// API to return human data with pagination
 async function calculateOnServerStart() {
   try {
     let lastId = 0;
@@ -165,46 +147,107 @@ async function calculateOnServerStart() {
           lastId
         }
       });
-      // console.log('Đã tải dữ liệu từ API:', result);
 
-      const dataBatch = result;
-      // console.log('Đã tải dữ liệu từ API:', result.length);
+      // Debug the result structure
+      console.log(`Result type: ${typeof result}, has data: ${result && typeof result.data !== 'undefined'}, data length: ${result && result.data ? result.data.length : 'N/A'}`);
+
+      // Handle the data based on its structure
+      let dataBatch;
+      if (result && result.data && Array.isArray(result.data)) {
+        dataBatch = result.data;
+      } else if (Array.isArray(result)) {
+        dataBatch = result;
+      } else if (result && typeof result === 'object') {
+        // Look for any array property
+        const arrayProp = Object.keys(result).find(key => Array.isArray(result[key]) && result[key].length > 0);
+        dataBatch = arrayProp ? result[arrayProp] : null;
+      }
+
       if (!dataBatch || dataBatch.length === 0) {
-        // console.log('⛔ Không còn dữ liệu để tải.');
-        lastId += 50000; // Tăng lastId để tránh vòng lặp vô hạn
+        lastId += 50000; // Increase lastId to avoid infinite loop
         batchCount++;
-        console.log(`📦 Batch ${batchCount}: Không còn dữ liệu để tải (Tổng: ${allHumans.length}); lastID = ${lastId}`);
+        console.log(`📦 Batch ${batchCount}: No more data to load (Total: ${allHumans.length}); lastID = ${lastId}`);
         continue;
       }
 
       allHumans.push(...dataBatch);
-      lastId = result[result.length - 1]?.Employee_Id || lastId; // Tăng lastId để tải dữ liệu tiếp theo 
+      lastId = dataBatch[dataBatch.length - 1]?.Employee_Id || lastId;
       batchCount++;
 
-      console.log(`📦 Batch ${batchCount}: Đã tải thêm ${dataBatch.length} bản ghi (Tổng: ${allHumans.length})`);
-      
-      if (batchCount == 11 || batchCount == 12 || batchCount == 13) {
-        console.log('Batch 11: .', result[0]);
-        
-      }
+      console.log(`📦 Batch ${batchCount}: Loaded ${dataBatch.length} records (Total: ${allHumans.length})`);
 
+      if (batchCount >= 11 && batchCount <= 13) {
+        console.log(`Batch ${batchCount} first record:`, dataBatch[0]);
+      }
     }
 
-    Humans = allHumans;
-    console.log(`🏁 Tổng cộng ${Humans.length} bản ghi đã được load vào bộ nhớ`);
+    // Update the global Humans object with proper structure
+    Humans = {
+      data: allHumans,
+      stats: {
+        recordCount: allHumans.length,
+        fixedStructure: true,
+        fromCache: false
+      }
+    };
 
-    console.log('✅ Đã cập nhật dữ liệu Humans cuối cùng', Humans.length);
+    lastSuccessfulUpdate = new Date().toISOString();
+    console.log(`🏁 Total ${Humans.data.length} records loaded into memory`);
 
-    console.log("employee last: ", Humans[500199]);
-    console.log("person last: ", Humans[500099]);
+    // Debug last records
+    if (Humans.data.length > 500000) {
+      console.log("Sample employee record:", Humans.data[500199]);
+      console.log("Sample person record:", Humans.data[500099]);
+    }
+
+    // Notify connected clients of update
+    io.emit('dataUpdated', {
+      timestamp: lastSuccessfulUpdate,
+      recordCount: Humans.data.length,
+      fromCache: false
+    });
+
+    return true;
 
   } catch (err) {
-    console.error('🚨 Lỗi khi tải dữ liệu Human:', err);
+    console.error('🚨 Error while calculating data on server start:', err);
+
+    // Fallback to cache if available
+    try {
+      const cachedData = await redisClient.get('humanData:50300:0');
+      if (cachedData) {
+        const parsedData = JSON.parse(cachedData);
+        if (parsedData && typeof parsedData === 'object') {
+          if (parsedData.data && Array.isArray(parsedData.data)) {
+            Humans = parsedData;
+          } else if (Array.isArray(parsedData)) {
+            Humans = { data: parsedData };
+          }
+
+          if (Humans && Humans.data) {
+            lastSuccessfulUpdate = new Date().toISOString();
+            console.log(`✅ Loaded ${Humans.data.length} records from Redis cache`);
+            
+            io.emit('dataUpdated', {
+              timestamp: lastSuccessfulUpdate,
+              recordCount: Humans.data.length,
+              fromCache: true
+            });
+            
+            return true;
+          }
+        }
+      }
+    } catch (cacheErr) {
+      console.error('❌ Cache fallback failed:', cacheErr);
+    }
+
+    io.emit('dataUnavailable', { message: 'Neither database nor cache data available' });
+    return false;
   }
 }
 
-
-// Tạo server HTTP và kết nối với Socket.io
+// Create HTTP server and Socket.IO instance
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -267,156 +310,6 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-async function calculateOnServerStart() {
-  try {
-    // Gọi controller với chỉ request params
-    const result = await getHumanData({ 
-      query: {
-        limit: 50300, 
-        lastId: 0 
-      }
-    });
-    
-    // Debug the result structure
-    console.log(`Result type: ${typeof result}, has data: ${result && typeof result.data !== 'undefined'}, data length: ${result && result.data ? result.data.length : 'N/A'}`);
-    
-    if (result && result.data && Array.isArray(result.data) && result.data.length > 0) {
-      Humans = result;
-      lastSuccessfulUpdate = new Date().toISOString();
-      console.log(`✅ Human data updated - ${result.data.length} records`);
-      
-      // Notify connected clients of update
-      io.emit('dataUpdated', { 
-        timestamp: lastSuccessfulUpdate,
-        recordCount: result.data.length,
-        fromCache: result.stats?.fromCache || false 
-      });
-      
-      return true;
-    } else {
-      console.error('⚠️ Update completed but returned no data or invalid data structure:', result);
-      
-      // Try to fix the structure if possible
-      if (result && typeof result === 'object') {
-        // If result is an array itself (no data property)
-        if (Array.isArray(result) && result.length > 0) {
-          Humans = { data: result };
-          lastSuccessfulUpdate = new Date().toISOString();
-          console.log(`✅ Fixed array structure - ${result.length} records`);
-          
-          io.emit('dataUpdated', { 
-            timestamp: lastSuccessfulUpdate,
-            recordCount: result.length,
-            fromCache: false
-          });
-          
-          return true;
-        }
-        
-        // If result has array property but not called 'data'
-        const possibleArrayProps = Object.keys(result).filter(key => Array.isArray(result[key]) && result[key].length > 0);
-        if (possibleArrayProps.length > 0) {
-          const arrayProp = possibleArrayProps[0];
-          Humans = { data: result[arrayProp] };
-          lastSuccessfulUpdate = new Date().toISOString();
-          console.log(`✅ Fixed structure using ${arrayProp} property - ${result[arrayProp].length} records`);
-          
-          io.emit('dataUpdated', { 
-            timestamp: lastSuccessfulUpdate,
-            recordCount: result[arrayProp].length,
-            fromCache: false
-          });
-          
-          return true;
-        }
-      }
-      
-      return false;
-    }
-  } catch (err) {
-    console.error('🚨 Error while calculating data on server start:', err);
-    
-    // Check if we have previously loaded data
-    if (Humans && Humans.data && Humans.data.length > 0) {
-      io.emit('dataUpdateFailed', { 
-        message: 'Update failed, using previous data',
-        lastSuccessfulUpdate: lastSuccessfulUpdate
-      });
-      return false;
-    } else {
-      // Try to load from cache directly as a last resort
-      try {
-        const cachedData = await redisClient.get('humanData:50300:0');
-        if (cachedData) {
-          try {
-            const parsedData = JSON.parse(cachedData);
-            
-            // Validate and fix the parsed data if needed
-            if (parsedData && typeof parsedData === 'object') {
-              // Check if parsedData has data property
-              if (parsedData.data && Array.isArray(parsedData.data) && parsedData.data.length > 0) {
-                Humans = parsedData;
-                lastSuccessfulUpdate = new Date().toISOString();
-                console.log(`✅ Loaded valid data from Redis cache - ${parsedData.data.length} records`);
-              } 
-              // Check if parsedData is array itself
-              else if (Array.isArray(parsedData) && parsedData.length > 0) {
-                Humans = { data: parsedData };
-                lastSuccessfulUpdate = new Date().toISOString();
-                console.log(`✅ Fixed array structure from Redis cache - ${parsedData.length} records`);
-              }
-              // Look for any array property in the object
-              else {
-                const possibleArrayProps = Object.keys(parsedData).filter(key => 
-                  Array.isArray(parsedData[key]) && parsedData[key].length > 0
-                );
-                
-                if (possibleArrayProps.length > 0) {
-                  const arrayProp = possibleArrayProps[0];
-                  Humans = { data: parsedData[arrayProp] };
-                  lastSuccessfulUpdate = new Date().toISOString();
-                  console.log(`✅ Fixed structure from Redis using ${arrayProp} property - ${parsedData[arrayProp].length} records`);
-                } else {
-                  console.error('❌ No valid data structure found in Redis cache');
-                  io.emit('dataUnavailable', { message: 'Invalid data structure in cache' });
-                  return false;
-                }
-              }
-              
-              io.emit('dataUpdated', { 
-                timestamp: lastSuccessfulUpdate,
-                recordCount: Humans.data.length,
-                fromCache: true
-              });
-              
-              return true;
-            } else {
-              console.error('❌ Invalid data format in Redis cache');
-              io.emit('dataUnavailable', { message: 'Invalid data format in cache' });
-              return false;
-            }
-          } catch (parseErr) {
-            console.error('❌ Failed to parse Redis cache data:', parseErr);
-            io.emit('dataUnavailable', { message: 'Failed to parse cached data' });
-            return false;
-          }
-        } else {
-          console.error('❌ No data found in Redis cache');
-          io.emit('dataUnavailable', { message: 'No data found in cache' });
-          return false;
-        }
-      } catch (cacheErr) {
-        console.error('❌ Cache fallback also failed:', cacheErr);
-        io.emit('dataUnavailable', { message: 'Cache access failed' });
-        return false;
-      }
-    }
-    
-    // No data available at all
-    io.emit('dataUnavailable', { message: 'Neither database nor cache data available' });
-    return false;
-  }
-}
 async function startApp() {
   console.log('Starting application...');
   let mysqlConnected = false;
