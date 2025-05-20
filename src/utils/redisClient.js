@@ -75,7 +75,6 @@ const enhancedRedisClient = {
   scanIterator(pattern) {
     return redisClient.scanIterator(pattern);
   },
-
   // Delete value 
   async del(key) {
     try {
@@ -83,11 +82,15 @@ const enhancedRedisClient = {
         console.log('⚠️ Redis not ready when attempting to delete', key);
         return false;
       }
+      if (!key) {
+        console.error('⚠️ Attempted to delete with empty key');
+        return false;
+      }
       await redisClient.del(key);
       console.log(`✅ Deleted Redis key: ${key}`);
       return true;
     } catch (err) {
-      console.error(`❌ Redis del error for key ${key}:`, err);
+      console.error(`❌ Redis del error for key "${key}":`, err);
       this.isReady = false;
       return false;
     }

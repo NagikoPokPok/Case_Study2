@@ -126,8 +126,44 @@ async function calculateOnServerStart() {
 async function handlePersonalChangeMessage(message) {
   console.log('Received message from personal_changes queue:', message);
   
-  // Khi nhận được message, load lại dữ liệu mới
-  await calculateOnServerStart();
+  if (isDataRefreshInProgress) {
+    console.log('Data refresh already in progress, flagging for another refresh');
+    dataRefreshNeeded = true;
+    return;
+  }
+
+  try {
+    isDataRefreshInProgress = true;
+    console.log('Starting data refresh due to database changes...');    // Clear existing Redis cache
+    const keys = [];
+    for await (const key of redisClient.scanIterator({ MATCH: 'humanData:*' })) {
+      if (key) {  // Only add non-empty keys
+        keys.push(key);
+      }
+    }
+    console.log(`Found ${keys.length} Redis keys to delete`);
+    for (const key of keys) {
+      if (key) {  // Double-check the key is not empty
+        await redisClient.del(key);
+      }
+    }
+
+    // Reload data from databases
+    await calculateOnServerStart();
+    
+    lastSuccessfulUpdate = new Date().toISOString();
+    console.log('Data refresh completed successfully');
+  } catch (err) {
+    console.error('Failed to refresh data:', err);
+  } finally {
+    isDataRefreshInProgress = false;
+    
+    // If another refresh was needed while we were processing, trigger it
+    if (dataRefreshNeeded) {
+      dataRefreshNeeded = false;
+      setTimeout(() => handlePersonalChangeMessage(message), 1000);
+    }
+  }
 }
 
 // Khởi động consumer và xử lý message
@@ -230,20 +266,12 @@ async function startApp() {
     console.log(`✅ Server đang chạy tại http://localhost:${PORT}`);
     console.log(`Database status: MySQL ${mysqlConnected ? 'connected' : 'disconnected'}, SQL Server ${sqlServerConnected ? 'connected' : 'disconnected'}`);
   });
-  
-  // Schedule periodic health checks and data refreshes
-  setInterval(async () => {
-    try {
-      await checkCircuitHealth();
-      
-      // If we have successful database connections, try to refresh data
-      if (!circuitState.mysqlCircuitOpen || !circuitState.sqlServerCircuitOpen) {
-        await calculateOnServerStart();
-      }
-    } catch (err) {
-      console.error('Scheduled health check failed:', err);
-    }
-  }, 60000); // Check every minute
+    // Just do an initial circuit health check
+  try {
+    await checkCircuitHealth();
+  } catch (err) {
+    console.error('Initial health check failed:', err);
+  }
 }
 
 // Start the application
