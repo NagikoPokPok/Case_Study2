@@ -71,7 +71,7 @@ async function calculateOnServerStart() {
     let allHumans = [];
     let batchCount = 0;
 
-    while (batchCount < 20) {
+    while (batchCount < 20 && lastId < 1000000) {
       const result = await getHumanData({
         query: {
           limit: 50000,
@@ -81,7 +81,7 @@ async function calculateOnServerStart() {
       // console.log('Đã tải dữ liệu từ API:', result);
 
       const dataBatch = result;
-
+      // console.log('Đã tải dữ liệu từ API:', result.length);
       if (!dataBatch || dataBatch.length === 0) {
         // console.log('⛔ Không còn dữ liệu để tải.');
         lastId += 50000; // Tăng lastId để tránh vòng lặp vô hạn
@@ -91,29 +91,26 @@ async function calculateOnServerStart() {
       }
 
       allHumans.push(...dataBatch);
-      lastId += 50000; // Tăng lastId để tải dữ liệu tiếp theo 
+      lastId = result[result.length - 1]?.Employee_Id || lastId; // Tăng lastId để tải dữ liệu tiếp theo 
       batchCount++;
 
       console.log(`📦 Batch ${batchCount}: Đã tải thêm ${dataBatch.length} bản ghi (Tổng: ${allHumans.length})`);
-
-      if (lastId === 1000000) {
-        console.log('✅ Đã tải toàn bộ dữ liệu.');
-        break;
+      
+      if (batchCount == 11 || batchCount == 12 || batchCount == 13) {
+        console.log('Batch 11: .', result[0]);
+        
       }
+
     }
 
     Humans = allHumans;
     console.log(`🏁 Tổng cộng ${Humans.length} bản ghi đã được load vào bộ nhớ`);
-    console.log('✅ Đã cập nhật dữ liệu Humans 776853', Humans[776853]);
-    console.log('✅ Đã cập nhật dữ liệu Humans 500001', Humans[500001]);
 
-    const result1 = await getHumanData({
-        query: {
-          limit: 50000,
-          lastId: 750000
-        }
-      });
-    console.log('✅ Đã cập nhật dữ liệu Humans 750000', result1);
+    console.log('✅ Đã cập nhật dữ liệu Humans cuối cùng', Humans.length);
+
+    console.log("employee last: ", Humans[500199]);
+    console.log("person last: ", Humans[500099]);
+
   } catch (err) {
     console.error('🚨 Lỗi khi tải dữ liệu Human:', err);
   }

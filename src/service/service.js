@@ -49,6 +49,8 @@ async function getHumanDataService(limit = 50000, lastId = 0) {
             };
         }
 
+        
+
         // 2. Lấy personal data và benefit plans từ SQL Server
         const personalData = await Personal.findAll({
             where: {
@@ -90,31 +92,112 @@ async function getHumanDataService(limit = 50000, lastId = 0) {
           
           for (const person of batch) {
             const employee = employeeData.find(emp => emp.idEmployee === person.Employee_ID);
-            if (employee) {
+            const employees = employeeData.find(emp => emp.idEmployee) | null;
+            const persons = personalData.find(emp => emp.Employee_ID) | null;
+
+            if (employees && persons) {
+                if (employees.idEmployee ===  persons.Employee_ID) {
+                    // Sử dụng BenefitPlan thay vì Benefit_Plans
+                    const avgBenefit = person.BenefitPlan && 
+                        typeof person.BenefitPlan.Deductable === 'number' && 
+                        typeof person.BenefitPlan.Percentage_CoPay === 'number' ? 
+                        (person.BenefitPlan.Deductable * (100 - person.BenefitPlan.Percentage_CoPay)) / 100 : 0;
+            
+
+                    humans.push(new Human({
+                        Employee_Id: person.Employee_ID,
+                        ShareHolder: person.Shareholder_Status,
+                        Gender: person.Gender,
+                        Ethnicity: person.Ethnicity,
+                        Employment_Status: person.Employment?.Employment_status || 'Not Specified',
+                        Department: person.JobHistory?.Department || 'Not Specified',
+                        Paid_To_Date: employees.Paid_To_Date || 0,
+                        Paid_Last_Year: employees.Paid_Last_Year || 0,
+                        Vacation_Days: employees.Vacation_Days || 0,
+                        Benefit_Plan: person.BenefitPlan?.Benefit_Plan_ID,
+                        Average_Plan_Benefit: avgBenefit,
+                        Pay_Amount: employees.Pay_Rate?.Pay_Amount || 0,
+                        Tax_Percentage: employees.Pay_Rate?.Tax_Percentage || 0
+                    }));
+                }
+                
+            }
+            else if (person) {
                 // Sử dụng BenefitPlan thay vì Benefit_Plans
                 const avgBenefit = person.BenefitPlan && 
                     typeof person.BenefitPlan.Deductable === 'number' && 
                     typeof person.BenefitPlan.Percentage_CoPay === 'number' ? 
                     (person.BenefitPlan.Deductable * (100 - person.BenefitPlan.Percentage_CoPay)) / 100 : 0;
-        
-
-                  humans.push(new Human({
+                
+                humans.push(new Human({
                       Employee_Id: person.Employee_ID,
                       ShareHolder: person.Shareholder_Status,
                       Gender: person.Gender,
                       Ethnicity: person.Ethnicity,
                       Employment_Status: person.Employment?.Employment_status || 'Not Specified',
                       Department: person.JobHistory?.Department || 'Not Specified',
-                      Paid_To_Date: employee.Paid_To_Date || 0,
-                      Paid_Last_Year: employee.Paid_Last_Year || 0,
-                      Vacation_Days: employee.Vacation_Days || 0,
                       Benefit_Plan: person.BenefitPlan?.Benefit_Plan_ID,
                       Average_Plan_Benefit: avgBenefit,
-                      Pay_Amount: employee.Pay_Rate?.Pay_Amount || 0,
-                      Tax_Percentage: employee.Pay_Rate?.Tax_Percentage || 0
-                  }));
-              }
+                }));
+            }
+
+            
+
+            // if (employee) {
+            //     // Sử dụng BenefitPlan thay vì Benefit_Plans
+            //     const avgBenefit = person.BenefitPlan && 
+            //         typeof person.BenefitPlan.Deductable === 'number' && 
+            //         typeof person.BenefitPlan.Percentage_CoPay === 'number' ? 
+            //         (person.BenefitPlan.Deductable * (100 - person.BenefitPlan.Percentage_CoPay)) / 100 : 0;
+        
+
+            //       humans.push(new Human({
+            //           Employee_Id: person.Employee_ID,
+            //           ShareHolder: person.Shareholder_Status,
+            //           Gender: person.Gender,
+            //           Ethnicity: person.Ethnicity,
+            //           Employment_Status: person.Employment?.Employment_status || 'Not Specified',
+            //           Department: person.JobHistory?.Department || 'Not Specified',
+            //           Paid_To_Date: employee.Paid_To_Date || 0,
+            //           Paid_Last_Year: employee.Paid_Last_Year || 0,
+            //           Vacation_Days: employee.Vacation_Days || 0,
+            //           Benefit_Plan: person.BenefitPlan?.Benefit_Plan_ID,
+            //           Average_Plan_Benefit: avgBenefit,
+            //           Pay_Amount: employee.Pay_Rate?.Pay_Amount || 0,
+            //           Tax_Percentage: employee.Pay_Rate?.Tax_Percentage || 0
+            //       }));
+            //   }
+            
           }
+
+        //   // 2. Thêm các Employee không có Personal
+        //     for (const emp of employeeData) {
+        //         if (!matchedIds.has(emp.idEmployee)) {
+        //             humans.push(new Human({
+        //             Employee_Id: emp.idEmployee,
+        //             Paid_To_Date: emp.Paid_To_Date || 0,
+        //             Paid_Last_Year: emp.Paid_Last_Year || 0,
+        //             Vacation_Days: emp.Vacation_Days || 0,
+        //             Pay_Amount: emp.Pay_Rate?.Pay_Amount || 0,
+        //             Tax_Percentage: emp.Pay_Rate?.Tax_Percentage || 0
+        //             }));
+        //         }
+        
+        // === Thêm employee không tồn tại trong Personal ===
+            const personalIds = new Set(personalData.map(p => p.Employee_ID));
+
+            for (const emp of employeeData) {
+            if (!personalIds.has(emp.idEmployee)) {
+                humans.push(new Human({
+                Employee_Id: emp.idEmployee,
+                Paid_To_Date: emp.Paid_To_Date || 0,
+                Paid_Last_Year: emp.Paid_Last_Year || 0,
+                Vacation_Days: emp.Vacation_Days || 0,
+                Pay_Amount: emp.Pay_Rate?.Pay_Amount || 0,
+                Tax_Percentage: emp.Pay_Rate?.Tax_Percentage || 0
+                }));
+            }
+            }
 
             currentIdx += batchSize;
             if (currentIdx % (batchSize * 10) === 0) {
