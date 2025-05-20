@@ -185,7 +185,8 @@ async function getHumanDataService(limit = 50000, lastId = 0) {
             const employees = employeeData.find(emp => emp.idEmployee) | null;
             const persons = personalData.find(emp => emp.Employee_ID) | null;
 
-            if (employees && persons) {
+            if (employee) {
+            
                 if (employees.idEmployee ===  persons.Employee_ID) {
                     // Sử dụng BenefitPlan thay vì Benefit_Plans
                     const avgBenefit = person.BenefitPlan && 
@@ -201,13 +202,13 @@ async function getHumanDataService(limit = 50000, lastId = 0) {
                         Ethnicity: person.Ethnicity,
                         Employment_Status: person.Employment?.Employment_status || 'Not Specified',
                         Department: person.JobHistory?.Department || 'Not Specified',
-                        Paid_To_Date: employees.Paid_To_Date || 0,
-                        Paid_Last_Year: employees.Paid_Last_Year || 0,
-                        Vacation_Days: employees.Vacation_Days || 0,
+                        Paid_To_Date: employee.Paid_To_Date || 0,
+                        Paid_Last_Year: employee.Paid_Last_Year || 0,
+                        Vacation_Days: employee.Vacation_Days || 0,
                         Benefit_Plan: person.BenefitPlan?.Benefit_Plan_ID,
                         Average_Plan_Benefit: avgBenefit,
-                        Pay_Amount: employees.Pay_Rate?.Pay_Amount || 0,
-                        Tax_Percentage: employees.Pay_Rate?.Tax_Percentage || 0
+                        Pay_Amount: employee.Pay_Rate?.Pay_Amount || 0,
+                        Tax_Percentage: employee.Pay_Rate?.Tax_Percentage || 0
                     }));
                 }
                 
@@ -259,19 +260,6 @@ async function getHumanDataService(limit = 50000, lastId = 0) {
             //   }
             
           }
-
-        //   // 2. Thêm các Employee không có Personal
-        //     for (const emp of employeeData) {
-        //         if (!matchedIds.has(emp.idEmployee)) {
-        //             humans.push(new Human({
-        //             Employee_Id: emp.idEmployee,
-        //             Paid_To_Date: emp.Paid_To_Date || 0,
-        //             Paid_Last_Year: emp.Paid_Last_Year || 0,
-        //             Vacation_Days: emp.Vacation_Days || 0,
-        //             Pay_Amount: emp.Pay_Rate?.Pay_Amount || 0,
-        //             Tax_Percentage: emp.Pay_Rate?.Tax_Percentage || 0
-        //             }));
-        //         }
         
         // === Thêm employee không tồn tại trong Personal ===
             const personalIds = new Set(personalData.map(p => p.Employee_ID));
