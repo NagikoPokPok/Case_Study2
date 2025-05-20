@@ -17,6 +17,8 @@ const route = require('./route/route');
 //Human merge
 let Humans = [];
 let lastSuccessfulUpdate = null;
+let isDataRefreshInProgress = false; // Flag to prevent concurrent refresh operations
+let dataRefreshNeeded = false; // Flag to indicate if data refresh is needed
 
 const app = express();
 app.use(cors());
@@ -57,6 +59,7 @@ app.get('/api/humanList', (req, res) => {
 // Hàm gọi API tính toán khi server chạy lần đầu
 async function calculateOnServerStart() {
   try {
+    console.log('🔄 Starting data refresh process...');
     let lastId = 0;
     let allHumans = [];
     let batchCount = 0;
@@ -68,12 +71,11 @@ async function calculateOnServerStart() {
           lastId
         }
       });
-      // console.log('Đã tải dữ liệu từ API:', result);
 
-      const dataBatch = result;
-      // console.log('Đã tải dữ liệu từ API:', result.length);
+      // Handle the data based on its structure
+      const dataBatch = result;;
+
       if (!dataBatch || dataBatch.length === 0) {
-        // console.log('⛔ Không còn dữ liệu để tải.');
         lastId += 50000; // Tăng lastId để tránh vòng lặp vô hạn
         batchCount++;
         console.log(`📦 Batch ${batchCount}: Không còn dữ liệu để tải (Tổng: ${allHumans.length}); lastID = ${lastId}`);
@@ -104,6 +106,39 @@ const io = new Server(server, {
   }
 });
 
+// Listen for Socket.io connections
+io.on('connection', (socket) => {
+  console.log('A user connected');
+  
+  // Gửi trạng thái dữ liệu cho client mới kết nối
+  socket.emit('dataStatus', { 
+    hasData: Humans && Array.isArray(Humans) && Humans.length > 0,
+    lastUpdate: lastSuccessfulUpdate,
+    recordCount: Humans.length || 0
+  });
+  
+  // Allow client to request data refresh
+  socket.on('requestDataRefresh', () => {
+    console.log('Client requested data refresh');
+    // Flag check refresh needed
+    dataRefreshNeeded = true;
+    
+    // Only start refresh if not already in progress
+    if (!isDataRefreshInProgress) {
+      calculateOnServerStart();
+    } else {
+      socket.emit('refreshStatus', { 
+        status: 'queued', 
+        message: 'Your refresh request has been queued' 
+      });
+    }
+  });
+  
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
+  });
+});
+
 // Start RabbitMQ consumer (if available)
 try {
   startRabbitConsumer();
@@ -112,16 +147,16 @@ try {
   // Continue app execution even if RabbitMQ fails
 }
 
-// Lắng nghe thông điệp từ các queue và gửi qua WebSocket
+// Listen for RabbitMQ messages
 onQueueUpdated('benefit_plan_changes', async (message) => {
   console.log('Emitting to WebSocket from benefit_plan_changes:', message);
   io.emit('benefitPlanUpdated', { message });
 
-  // Try to update data on change notification
-  try {
+  // Flag check refresh needed
+  dataRefreshNeeded = true;
+  
+  if (!isDataRefreshInProgress) {
     await calculateOnServerStart();
-  } catch (err) {
-    console.error('Failed to update data after benefit plan change:', err);
   }
 });
 
@@ -129,35 +164,18 @@ onQueueUpdated('personal_changes', async (message) => {
   console.log('Emitting to WebSocket from personal_changes:', message);
   io.emit('personalChanged', { message });
 
-  // Try to update data on change notification
-  try {
+  // Flag check refresh needed
+  dataRefreshNeeded = true;
+  
+  if (!isDataRefreshInProgress) {
     await calculateOnServerStart();
-  } catch (err) {
-    console.error('Failed to update data after personal change:', err);
   }
-});
-
-// Frontend connection via WebSocket
-io.on('connection', (socket) => {
-  console.log('A user connected');
-  
-  // Send data status to newly connected client
-  socket.emit('dataStatus', { 
-    hasData: Humans && Humans.data && Humans.data.length > 0,
-    lastUpdate: lastSuccessfulUpdate,
-    recordCount: Humans?.data?.length || 0
-  });
-  
-  socket.on('disconnect', () => {
-    console.log('User disconnected');
-  });
 });
 
 // Phục vụ trang HTML (frontend)
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
-
 
 async function startApp() {
   console.log('Starting application...');
@@ -186,7 +204,7 @@ async function startApp() {
     console.error('⚠️ Redis client not ready. Will keep trying to connect...');
   }
   
-  // Try to load data - even if databases are down, we might get cached data
+  // Load data only at the beginning
   try {
     await calculateOnServerStart();
   } catch (err) {
@@ -200,13 +218,14 @@ async function startApp() {
     console.log(`Database status: MySQL ${mysqlConnected ? 'connected' : 'disconnected'}, SQL Server ${sqlServerConnected ? 'connected' : 'disconnected'}`);
   });
   
-  // Schedule periodic health checks and data refreshes
+  // Thay thế setInterval với health check không làm mới dữ liệu
   setInterval(async () => {
     try {
       await checkCircuitHealth();
       
-      // If we have successful database connections, try to refresh data
-      if (!circuitState.mysqlCircuitOpen || !circuitState.sqlServerCircuitOpen) {
+      // Không tự động làm mới dữ liệu nữa - chỉ khi cần thiết
+      if (dataRefreshNeeded && !isDataRefreshInProgress) {
+        console.log('Running scheduled data refresh based on flags');
         await calculateOnServerStart();
       }
     } catch (err) {
