@@ -3,39 +3,52 @@ import { renderGenderPieChart } from '/Charts/genderPieChart.js';
 import { renderEmployeePieChart } from '/Charts/employeePieChart.js';
 import { renderShareholderPieChart } from '/Charts/shareholderPieChart.js';
 import { renderEthnicityBarChart } from '/Charts/ethnicityBarChart.js';
-import { formatNumber } from './format_number.js';
-// import { dataService } from '../services/data_service.js';
+import { compactUSD } from './chart_options.js';
 
 async function fetchHumanData() {
-    let allData = [];
-    let lastId = 0;
-    let hasMore = true;
-
-    // while (hasMore) {
-        
-    // }
     try {
-        const response = await fetch(`http://localhost:3000/api/humanList`);
-        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        const response = await fetch(`http://localhost:3000/api/humanList`, {
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            document.getElementById('error-message').textContent = `Server unavailable (${response.status}). Please try again later.`;
+            document.getElementById('error-container').style.display = 'block';
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const result = await response.json();
-        allData = (result);
-        
-        if (result.data && result.data.length > 0) {
-            allData = allData.concat(result.data);
-            lastId = result.nextLastId;
-            hasMore = result.hasMore;
+
+        if (result.error) {
+            document.getElementById('error-message').textContent = `Error: ${result.message}`;
+            document.getElementById('error-container').style.display = 'block';
+            return [];
+        }
+
+        if (result.data && Array.isArray(result.data)) {
+            return result.data;
+        } else if (Array.isArray(result)) {
+            return result;
         } else {
-            hasMore = false;
+            document.getElementById('error-message').textContent = 'Invalid data format received from server.';
+            document.getElementById('error-container').style.display = 'block';
+            return [];
         }
     } catch (error) {
-        console.error('Error fetching data:', error);
-        // break;
+        document.getElementById('error-message').textContent = `Connection error: ${error.message}`;
+        document.getElementById('error-container').style.display = 'block';
+        return [];
     }
-    return allData;
 }
 
 document.addEventListener("DOMContentLoaded", async function () {
-    const data = await fetchHumanData();
+    try {
+        const data = await fetchHumanData();
+        if (!data.length) return;
 
     const numberMoney = document.getElementById("number-day");
     const numberShareholder = document.getElementById("number-shareholder");
@@ -53,7 +66,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     const departments = [...new Set(data.map(human => human.Department))];
 
     // Update summary numbers
-    numberMoney.textContent = formatNumber(totalVacation);
+    numberMoney.textContent = compactUSD.format(totalVacation);
     numberShareholder.textContent = shareholders;
     numberDepartment.textContent = departments.length;
 
@@ -106,19 +119,19 @@ document.addEventListener("DOMContentLoaded", async function () {
     }))
     .sort((a, b) => b.total - a.total);
 
-    // Update totals in UI
-    totalDepartment.textContent = formatNumber(departmentData.reduce((sum, dept) => sum + dept.total, 0));
-    totalGender.textContent = formatNumber(genderData.male + genderData.female);
-    totalEmployee.textContent = formatNumber(employmentData.fulltime + employmentData.parttime);
-    totalShareholder.textContent = formatNumber(shareholderData.shareholder + shareholderData.nonShareHolder);
-    totalEthnicity.textContent = formatNumber(ethnicityData.reduce((sum, eth) => sum + eth.total, 0));
+    // Update totals in UI    totalDepartment.textContent = compactUSD.format(departmentData.reduce((sum, dept) => sum + dept.total, 0));
+    totalGender.textContent = compactUSD.format(genderData.male + genderData.female);
+    totalEmployee.textContent = compactUSD.format(employmentData.fulltime + employmentData.parttime);
+    totalShareholder.textContent = compactUSD.format(shareholderData.shareholder + shareholderData.nonShareHolder);
+    totalEthnicity.textContent = compactUSD.format(ethnicityData.reduce((sum, eth) => sum + eth.total, 0));
 
     // Department Bar Chart
     renderDepartmentBarChart(
         document.getElementById('departmentBarChart').getContext('2d'),
         departmentData.map(d => d.name),
         departmentData.map(d => d.total),
-        []
+        [],
+        'days'
     );
 
     // Gender Pie Chart
@@ -126,7 +139,8 @@ document.addEventListener("DOMContentLoaded", async function () {
         document.getElementById('genderPieChart').getContext('2d'),
         ['Male', 'Female'],
         [genderData.male, genderData.female],
-        ['#4e73df', '#e74a3b']
+        ['#4e73df', '#e74a3b'],
+        'days'
     );
 
     // Employee Pie Chart
@@ -134,7 +148,8 @@ document.addEventListener("DOMContentLoaded", async function () {
         document.getElementById('employeePieChart').getContext('2d'),
         ['Full-time', 'Part-time'],
         [employmentData.fulltime, employmentData.parttime],
-        ['#1cc88a', '#f6c23e']
+        ['#1cc88a', '#f6c23e'],
+        'days'
     );
 
     // Shareholder Bar Chart
@@ -142,7 +157,8 @@ document.addEventListener("DOMContentLoaded", async function () {
         document.getElementById('shareholderPieChart').getContext('2d'),
         ['Shareholder', 'Non-Shareholder'],
         [shareholderData.shareholder, shareholderData.nonShareHolder],
-        ['#6f42c1', '#d63384']
+        ['#6f42c1', '#d63384'],
+        'days'
     );
 
     // Ethnicity Bar Chart
@@ -151,6 +167,10 @@ document.addEventListener("DOMContentLoaded", async function () {
         ethnicityData.map(d => d.name),
         ethnicityData.map(d => d.total),
         [],
+        'days'
     );
+        } catch (error) {
+        console.error('Error loading vacation day data:', error);
+    }
 });
 

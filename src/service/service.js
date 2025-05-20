@@ -179,6 +179,9 @@ async function getHumanDataService(limit = 50000, lastId = 0) {
         }
 
         // 4. Resolve the data
+
+        console.log(`Found ${employeeData.length} employees and ${personalData.length} personal records`);
+
         const humans = [];
         let currentIdx = 0;
         const batchSize = 5000;
@@ -189,6 +192,11 @@ async function getHumanDataService(limit = 50000, lastId = 0) {
             for (const person of batch) {
                 const employee = employeeData.find(emp => emp.idEmployee === person.Employee_ID);
                 if (employee) {
+                    if (!person.Employee_ID || !employee.idEmployee) {
+                        console.warn('Data mismatch:', { person, employee });
+                        continue;
+                    }
+
                     const avgBenefit = person.BenefitPlan && 
                         typeof person.BenefitPlan.Deductable === 'number' && 
                         typeof person.BenefitPlan.Percentage_CoPay === 'number' ? 
@@ -218,9 +226,17 @@ async function getHumanDataService(limit = 50000, lastId = 0) {
             }
         }
 
+        if (humans.length === 0) {
+            console.error('No records after merging:', {
+                employeeCount: employeeData.length,
+                personalCount: personalData.length
+            });
+        }
+
+
         const result = {
             data: humans,
-            nextLastId: employeeData[employeeData.length - 1].idEmployee,
+            nextLastId: employeeData[employeeData.length - 1]?.idEmployee || lastId,
             hasMore: employeeData.length === limit,
             stats: {
                 queryTime: Date.now() - startTime,

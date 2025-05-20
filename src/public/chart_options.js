@@ -1,4 +1,12 @@
-import { formatNumber } from './format_number.js';
+
+
+export const compactUSD = new Intl.NumberFormat('en', {
+  notation:    'compact',
+  style:       'currency',
+  currency:    'USD',
+  // keep one decimal place for billions, millions, etc
+  maximumFractionDigits: 1
+});
 
 export const commonChartOptions = {
     responsive: true,
@@ -6,12 +14,12 @@ export const commonChartOptions = {
     plugins: {
         tooltip: {
             callbacks: {
-                label: (context) => `${context.label}: $${formatNumber(context.raw)}`
+                label: (context) => `${context.label}: ${compactUSD.format(context.raw)}`
             }
         },
         datalabels: {
             color: '#fff',
-            formatter: (value) => formatNumber(value)
+            formatter: (value) => compactUSD.format(value)
         }
     }
 };
@@ -22,11 +30,12 @@ export const barChartOptions = {
     scales: {
         x: {
             ticks: {
-                callback: (value) => '$' + formatNumber(value)
+                callback: value => compactUSD.format(value),
             }
         },
         y: {
             ticks: {
+                callback: value => compactUSD.format(value),
                 autoSkip: false,
                 maxRotation: 0
             }
@@ -40,7 +49,7 @@ export const barChartOptions = {
         datalabels: {
             anchor: 'end',
             align: 'right',
-            formatter: (value) => formatNumber(value),
+            formatter: (value) => compactUSD.format(value),
             color: '#000',
             font: {
                 weight: 'bold',
@@ -59,7 +68,7 @@ export const pieChartOptions = {
                 label: (context) => {
                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                     const percentage = ((context.raw / total) * 100).toFixed(1);
-                    return `${context.label}: $${formatNumber(context.raw)} (${percentage}%)`;
+                    return `${context.label}: ${compactUSD.format(context.raw)} (${percentage}%)`;
                 }
             }
         }

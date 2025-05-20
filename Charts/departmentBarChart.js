@@ -1,3 +1,5 @@
+import { compactUSD } from '../src/public/chart_options.js';
+
 export function renderDepartmentBarChart(ctx, labels, data, colors, type) {
     // If colors not provided, generate random pastel colors
     if (!colors || colors.length < data.length) {
@@ -36,12 +38,14 @@ export function renderDepartmentBarChart(ctx, labels, data, colors, type) {
                     beginAtZero: true,
                     max: maxValue + padding,
                     ticks: {
-                        callback: function(value) {
-                            return value.toLocaleString() + " " + unit;
+                         callback: function(value) {
+                            return type === 'money'
+                                ? compactUSD.format(value)
+                                : value.toLocaleString() + ' days';
                         }
-                    }
                 }
-            },
+            }
+        },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -57,23 +61,11 @@ export function renderDepartmentBarChart(ctx, labels, data, colors, type) {
                     color: '#222',
                     font: { weight: 'bold' },
                     formatter: function(value) {
-                        return formatNumber(value);
+                        return compactUSD.format(value);
                     }
                 }
             }
         },
         plugins: [ChartDataLabels]
     });
-
-    function formatNumber(value) {
-        const unit = type === 'money' ? '$' : '';
-        if (value >= 1e9) {
-            return unit + (value / 1e9).toFixed(1) + 'B';
-        } else if (value >= 1e6) {
-            return unit + (value / 1e6).toFixed(1) + 'M';
-        } else if (value >= 1e3) {
-            return unit + (value / 1e3).toFixed(1) + 'K';
-        }
-        return unit + value.toLocaleString();
-    }
 }

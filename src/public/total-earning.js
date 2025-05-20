@@ -3,37 +3,102 @@ import { renderGenderPieChart } from '/Charts/genderPieChart.js';
 import { renderEmployeePieChart } from '/Charts/employeePieChart.js';
 import { renderShareholderPieChart } from '/Charts/shareholderPieChart.js';
 import { renderEthnicityBarChart } from '/Charts/ethnicityBarChart.js';
-import { formatNumber } from './format_number.js';
-import { barChartOptions, pieChartOptions } from './chart_options.js';
-
+import { compactUSD } from './chart_options.js';
 
 async function fetchHumanData() {
-    let allData = [];
-    let lastId = 0;
-    let hasMore = true;
-
-    // while (hasMore) {
-        
-    // }
     try {
-        const response = await fetch(`http://localhost:3000/api/humanList`);
+        console.log('Attempting to fetch data from server...');
+        
+        // Add a timeout to the fetch request
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        // Call API to fetch data with timeout
+        const response = await fetch(`http://localhost:3000/api/humanList`, {
+            signal: controller.signal
+        });
+        
+        // Clear the timeout
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            console.error(`Server responded with status: ${response.status}`);
+            
+            // Try to get error details from response
+            try {
+                const errorData = await response.json();
+                console.error('Server error details:', errorData);
+            } catch (parseErr) {
+                // If can't parse error JSON, just log the status
+                console.error('Could not parse error response');
+            }
+            
+            // Display error message to user
+            document.getElementById('error-message').textContent = 
+                `Server unavailable (${response.status}). Please try again later.`;
+            document.getElementById('error-container').style.display = 'block';
+            
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
         const result = await response.json();
+        console.log('Received data from server:', result);
 
-        allData = (result);
-        
-        if (result.data && result.data.length > 0) {
-            allData = allData.concat(result.data);
-            lastId = result.nextLastId;
-            hasMore = result.hasMore;
-        } else {
-            hasMore = false;
+        // Check server error
+        if (result.error) {
+            console.error('Server error:', result.message);
+            document.getElementById('error-message').textContent = 
+                `Error: ${result.message}`;
+            document.getElementById('error-container').style.display = 'block';
+            return [];
         }
+
+        // Check and validate data structure
+        let validData = [];
+        
+        // Check if result has data array
+        if (result.data && Array.isArray(result.data)) {
+            console.log(`Fetched ${result.data.length} records from data property`);
+            validData = result.data;
+        }
+        // Check if result is an array
+        else if (Array.isArray(result)) {
+            console.log(`Fetched ${result.length} records from array result`);
+            validData = result;
+        }
+        // No valid data structure found
+        else {
+            console.warn('No valid data received:', result);
+            document.getElementById('error-message').textContent = 
+                'Invalid data format received from server.';
+            document.getElementById('error-container').style.display = 'block';
+            return [];
+        }
+        
+        // Validate each record has Total_Earning
+        return validData.map(item => {
+            // If Total_Earning is missing, calculate it
+            if (typeof item.Total_Earning === 'undefined') {
+                return {
+                    ...item,
+                    Total_Earning: (item.Paid_To_Date || 0) + 
+                                  (item.Average_Plan_Benefit || 0) + 
+                                  ((item.Pay_Amount || 0) * 0.1)
+                };
+            }
+            return item;
+        });
+
     } catch (error) {
         console.error('Error fetching data:', error);
-        // break;
+        
+        // Show error message to user
+        document.getElementById('error-message').textContent = 
+            `Connection error: ${error.message}`;
+        document.getElementById('error-container').style.display = 'block';
+        
+        return []; 
     }
-    return allData;
 }
 
 document.addEventListener("DOMContentLoaded", async function () {
@@ -56,8 +121,8 @@ document.addEventListener("DOMContentLoaded", async function () {
     const shareholders = data.filter(human => human.ShareHolder).length;
     const departments = [...new Set(data.map(human => human.Department))];
 
-    // Update summary numbers
-    numberMoney.textContent = formatNumber(totalEarning);
+    // Update summary numbers - use format() method with compactUSD
+    numberMoney.textContent = compactUSD.format(totalEarning);
     numberShareholder.textContent = shareholders;
     numberDepartment.textContent = departments.length;
 
@@ -69,10 +134,10 @@ document.addEventListener("DOMContentLoaded", async function () {
             .filter(human => human.Department === dept)
             .reduce((sum, human) => sum + human.Total_Earning, 0)
     }))
-    .sort((a, b) => b.total - a.total) // Sort từ lớn đến nhỏ
+    .sort((a, b) => b.total - a.total) // Sort from largest to smallest
     .slice(0, 10); 
 
-    // Process employment status data với null check
+    // Process employment status data with null check
     const employmentData = {
         fulltime: data
             .filter(human => human.Employment_Status?.toLowerCase() === 'full-time')
@@ -110,14 +175,14 @@ document.addEventListener("DOMContentLoaded", async function () {
     }))
     .sort((a, b) => b.total - a.total);
 
-    // Update totals in UI
-    totalDepartment.textContent = formatNumber(departmentData.reduce((sum, dept) => sum + dept.total, 0));
-    totalGender.textContent = formatNumber(genderData.male + genderData.female);
-    totalEmployee.textContent = formatNumber(employmentData.fulltime + employmentData.parttime);
-    totalShareholder.textContent = formatNumber(shareholderData.shareholder + shareholderData.nonShareHolder);
-    totalEthnicity.textContent = formatNumber(ethnicityData.reduce((sum, eth) => sum + eth.total, 0));
+    // Update totals in UI - use format() method with compactUSD
+    totalDepartment.textContent = compactUSD.format(departmentData.reduce((sum, dept) => sum + dept.total, 0));
+    totalGender.textContent = compactUSD.format(genderData.male + genderData.female);
+    totalEmployee.textContent = compactUSD.format(employmentData.fulltime + employmentData.parttime);
+    totalShareholder.textContent = compactUSD.format(shareholderData.shareholder + shareholderData.nonShareHolder);
+    totalEthnicity.textContent = compactUSD.format(ethnicityData.reduce((sum, eth) => sum + eth.total, 0));
 
-     // Cập nhật cách render department chart
+    // Update department chart rendering
     renderDepartmentBarChart(
         document.getElementById('departmentBarChart').getContext('2d'),
         departmentData.map(d => d.name),
@@ -126,29 +191,26 @@ document.addEventListener("DOMContentLoaded", async function () {
         'money'
     );
 
-// Cập nhật cách render employment chart
-renderEmployeePieChart(
-    document.getElementById('employeePieChart').getContext('2d'),
-    ['Full-time', 'Part-time'],
-    [employmentData.fulltime, employmentData.parttime],
-    ['#1cc88a', '#f6c23e']
-);
+    // Update employment chart rendering
+    renderEmployeePieChart(
+        document.getElementById('employeePieChart').getContext('2d'),
+        ['Full-time', 'Part-time'],
+        [employmentData.fulltime, employmentData.parttime],
+        ['#1cc88a', '#f6c23e']
+    );
 
     renderGenderPieChart(
         document.getElementById('genderPieChart').getContext('2d'),
         ['Male', 'Female'],
         [genderData.male, genderData.female],
-        ['#4e73df', '#e74a3b'],
-        
+        ['#4e73df', '#e74a3b']
     );
-
 
     renderShareholderPieChart(
         document.getElementById('shareholderPieChart').getContext('2d'),
         ['Shareholder', 'Non-Shareholder'],
         [shareholderData.shareholder, shareholderData.nonShareHolder],
-        ['#6f42c1', '#d63384'],
-        
+        ['#6f42c1', '#d63384']
     );
 
     renderEthnicityBarChart(

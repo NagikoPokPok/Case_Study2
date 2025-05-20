@@ -1,3 +1,5 @@
+import { compactUSD } from '../src/public/chart_options.js';
+
 export function renderEthnicityBarChart(ctx, labels, data, colors, type) {
     
     // If colors not provided, generate random pastel colors
@@ -11,8 +13,6 @@ export function renderEthnicityBarChart(ctx, labels, data, colors, type) {
     // Calculate padding based on number of digits in maxValue
     const zeros = Math.floor(Math.log10(maxValue));
     const padding = Math.pow(10, zeros - 1 > 0 ? zeros - 1 : 1);
-
-    const unit = type === 'money' ? '$' : 'days';
 
     return new Chart(ctx, {
         type: 'bar',
@@ -34,25 +34,25 @@ export function renderEthnicityBarChart(ctx, labels, data, colors, type) {
             animation: {
                 duration: 1500,
                 easing: 'easeOutBounce'
-            },
-            scales: {
+            },            scales: {
                 x: { grid: { display: false } },
                 y: {
                     beginAtZero: true,
                     max: maxValue + padding,
                     ticks: {
                         callback: function(value) {
-                            return value.toLocaleString() + " " + unit;
+                            return type === 'money' ? compactUSD.format(value) : value.toLocaleString() + ' days';
                         }
                     }
                 }
             },
             plugins: {
-                legend: { display: false },
-                tooltip: {
+                legend: { display: false },                tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return context.parsed.y.toLocaleString() + " " + unit;
+                            return type === 'money' ? 
+                                compactUSD.format(context.parsed.y) : 
+                                context.parsed.y.toLocaleString() + ' days';
                         }
                     }
                 },
@@ -62,7 +62,7 @@ export function renderEthnicityBarChart(ctx, labels, data, colors, type) {
                     color: '#222',
                     font: { weight: 'bold' },
                     formatter: function(value) {
-                        return value.toLocaleString() + " " + unit;
+                        return type === 'money' ? compactUSD.format(value) : value.toLocaleString() + ' days';
                     }
                 }
             }
