@@ -89,6 +89,14 @@ async function calculateOnServerStart() {
     }
 
     Humans = allHumans;
+
+    // Delete old data from Redis cache
+    const cacheKeys = await redisClient.keys('humanData:*');
+      for (const key of cacheKeys) {
+        await redisClient.del(key);
+        console.log(`Deleted Redis cache key: ${key}`);
+      }
+
     console.log(`🏁 Tổng cộng ${Humans.length} bản ghi đã được load vào bộ nhớ`);
 
   } catch (err) {
