@@ -118,10 +118,7 @@ async function calculateOnServerStart() {
       }
       
       batchCount++;
-
-    //   console.log(`📦 Batch ${batchCount}: Đã tải thêm ${dataBatch.length} bản ghi (Tổng: ${allHumans.length})`);
-    // }
-
+    }
     // Update the Humans variable with the new data
     Humans = allHumans;
     lastSuccessfulUpdate = new Date().toISOString();
@@ -135,9 +132,10 @@ async function calculateOnServerStart() {
     });
 
     return true;
-  } catch (err) {
-    console.error('🚨 Lỗi khi tải dữ liệu Human:', err);
-    return false;
+
+    } catch (err) {
+      console.error('🚨 Lỗi khi tải dữ liệu Human:', err);
+      return false;
   } finally {
     // End the refresh process
     isDataRefreshInProgress = false;
