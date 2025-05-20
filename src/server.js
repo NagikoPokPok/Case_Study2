@@ -119,8 +119,8 @@ async function calculateOnServerStart() {
       
       batchCount++;
 
-      console.log(`📦 Batch ${batchCount}: Đã tải thêm ${dataBatch.length} bản ghi (Tổng: ${allHumans.length})`);
-    }
+    //   console.log(`📦 Batch ${batchCount}: Đã tải thêm ${dataBatch.length} bản ghi (Tổng: ${allHumans.length})`);
+    // }
 
     // Update the Humans variable with the new data
     Humans = allHumans;
