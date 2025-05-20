@@ -99,11 +99,22 @@ async function calculateOnServerStart() {
     Humans = allHumans;
 
     // Delete old data from Redis cache
-    const cacheKeys = await redisClient.keys('humanData:*');
-      for (const key of cacheKeys) {
-        await redisClient.del(key);
-        console.log(`Deleted Redis cache key: ${key}`);
-      }
+    const keys = [];
+    for await (const key of redisClient.scanIterator({ MATCH: 'humanData:*' })) {
+      keys.push(key);
+    }
+    for (const key of keys) {
+      await redisClient.del(key);
+      console.log(`Deleted Redis cache key: ${key}`);
+    }
+
+    console.log(`🏁 Tổng cộng ${Humans.length} bản ghi đã được load vào bộ nhớ`);
+
+    // PHÁT SỰ KIỆN WEBSOCKET CHO CLIENT
+    if (typeof io !== 'undefined') {
+      io.emit('personalChanged', { message: 'Data updated from legacy system' });
+      console.log('WebSocket event personalChanged emitted');
+    }
 
     console.log(`🏁 Tổng cộng ${Humans.length} bản ghi đã được load vào bộ nhớ`);
 
