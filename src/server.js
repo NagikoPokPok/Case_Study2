@@ -219,11 +219,11 @@ async function calculateOnServerStart() {
     lastSuccessfulUpdate = new Date().toISOString();
     console.log(`🏁 Total ${Humans.data.length} records loaded into memory`);
 
-    // Debug last records
-    if (Humans.data.length > 500000) {
-      console.log("Sample employee record:", Humans.data[500199]);
-      console.log("Sample person record:", Humans.data[500099]);
-    }
+    // // Debug last records
+    // if (Humans.data.length > 500000) {
+    //   console.log("Sample employee record:", Humans.data[500199]);
+    //   console.log("Sample person record:", Humans.data[500099]);
+    // }
 
     // Notify connected clients of update
     io.emit('dataUpdated', {
