@@ -3,46 +3,53 @@ const cors = require('cors');
 const db = require('./models'); // Sequelize (MySQL)
 const { connectSqlServer } = require('./database/sqlServerConnection');
 const { getHumanData } = require('./controller/controller');  // Import controller
+const redisClient = require('./utils/redisClient'); // Redis client
+const { checkCircuitHealth, circuitState } = require('./service/service'); // Import circuit breaker status check
 
 const http = require('http');
 const { Server } = require('socket.io');
-const path = require('path'); // Thêm module path để phục vụ file HTML
+const path = require('path');
 const { startRabbitConsumer, onQueueUpdated } = require('../rabbitReceiver'); // Import consumer
-
 
 //route
 const route = require('./route/route');
 
 //Human merge
-let Humans;
+let Humans = [];
+let lastSuccessfulUpdate = null;
 
 const app = express();
-app.use(cors()); // Cho phép truy cập từ FE
-app.use(express.json())
-// Phục vụ trang HTML khi người dùng truy cập vào root
-app.use(express.static(path.join(__dirname, ''))); // Đảm bảo index.html nằm trong thư mục 'public'
-
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, '')));
 
 //use route
 app.use('/api/route', route);
 
-
-// Định nghĩa API trả về dữ liệu này
-app.get('/api/humanList', (req, res) => {
-  res.json(Humans); // Trả về mảng dữ liệu dưới dạng JSON
-  // console.log( Humans); // Log kết quả
+// Middleware to check database status
+app.use('/api/status', async (req, res) => {
+  try {
+    await checkCircuitHealth();
+    res.json({
+      mysql: !circuitState.mysqlCircuitOpen ? 'connected' : 'disconnected',
+      sqlServer: !circuitState.sqlServerCircuitOpen ? 'connected' : 'disconnected',
+      redis: redisClient.isReady ? 'connected' : 'disconnected',
+      lastSuccessfulUpdate: lastSuccessfulUpdate
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not check status', message: err.message });
+  }
 });
 
-// API lấy dữ liệu employee
-app.get('/api/employee', async (req, res) => {
-  try {
-      await sql.connect(config);
-      const result = await sql.query('SELECT * FROM employee');
-  
-      res.json(result.recordset);
-  } catch (err) {
-      console.error(err);
-      res.status(500).send('Lỗi khi truy vấn dữ liệu');
+// API to return human data
+app.get('/api/humanList', (req, res) => {
+  if (Humans && Humans.data && Humans.data.length > 0) {
+    res.json(Humans);
+  } else {
+    res.status(503).json({ 
+      error: 'Data unavailable', 
+      message: 'No data is currently available. Services may be initializing or experiencing issues.' 
+    });
   }
 });
 
@@ -126,59 +133,183 @@ const io = new Server(server, {
   }
 });
 
-// Start RabbitMQ consumer
-startRabbitConsumer();
+// Start RabbitMQ consumer (if available)
+try {
+  startRabbitConsumer();
+} catch (err) {
+  console.error('RabbitMQ consumer failed to start:', err);
+  // Continue app execution even if RabbitMQ fails
+}
 
 // Lắng nghe thông điệp từ các queue và gửi qua WebSocket
 onQueueUpdated('benefit_plan_changes', async (message) => {
-    console.log('Emitting to WebSocket from benefit_plan_changes:', message);  // Log thông điệp trước khi phát
-    io.emit('benefitPlanUpdated', { message }); // Emit thông điệp đến frontend qua WebSocket
+  console.log('Emitting to WebSocket from benefit_plan_changes:', message);
+  io.emit('benefitPlanUpdated', { message });
 
-    // Gọi lại hàm calculateOnServerStart khi có thông điệp mới
-   await calculateOnServerStart();
+  // Try to update data on change notification
+  try {
+    await calculateOnServerStart();
+  } catch (err) {
+    console.error('Failed to update data after benefit plan change:', err);
+  }
 });
 
 onQueueUpdated('personal_changes', async (message) => {
-    console.log('Emitting to WebSocket from personal_changes:', message);  // Log thông điệp trước khi phát
-    io.emit('personalChanged', { message }); // Emit thông điệp đến frontend qua WebSocket
+  console.log('Emitting to WebSocket from personal_changes:', message);
+  io.emit('personalChanged', { message });
 
-    // Gọi lại hàm calculateOnServerStart khi có thông điệp mới
+  // Try to update data on change notification
+  try {
     await calculateOnServerStart();
+  } catch (err) {
+    console.error('Failed to update data after personal change:', err);
+  }
 });
 
 // Frontend connection via WebSocket
 io.on('connection', (socket) => {
-    console.log('A user connected');  // Log khi có người kết nối WebSocket
-    socket.on('disconnect', () => {
-        console.log('User disconnected');
-    });
+  console.log('A user connected');
+  
+  // Send data status to newly connected client
+  socket.emit('dataStatus', { 
+    hasData: Humans && Humans.data && Humans.data.length > 0,
+    lastUpdate: lastSuccessfulUpdate,
+    recordCount: Humans?.data?.length || 0
+  });
+  
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
+  });
 });
 
 // Phục vụ trang HTML (frontend)
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html')); // Đảm bảo 'index.html' nằm trong thư mục 'public'
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-
-async function startApp() {
+// Hàm gọi API tính toán khi server chạy lần đầu - now with fallback!
+async function calculateOnServerStart() {
   try {
-    await db.sequelize.authenticate(); // MySql
-    console.log('✅ MySQL connected');
-
-    await connectSqlServer(); // SQL Server
-
-    // Gọi hàm tính toán khi server khởi động
-    await calculateOnServerStart();  // Tính toán ngay khi server bắt đầu chạy
-
-
-    app.listen(3000, () => {
-      console.log('✅ Server đang chạy tại http://localhost:3000');
+    // Gọi controller với chỉ request params
+    const result = await getHumanData({ 
+      query: {
+        limit: 50300, 
+        lastId: 0 
+      }
     });
+    
+    if (result && result.data) {
+      Humans = result;
+      lastSuccessfulUpdate = new Date().toISOString();
+      console.log(`✅ Đã cập nhật dữ liệu Humans mới nhất - ${result.data.length} records`);
+      
+      // Notify connected clients of update
+      io.emit('dataUpdated', { 
+        timestamp: lastSuccessfulUpdate,
+        recordCount: result.data.length,
+        fromCache: result.stats?.fromCache || false 
+      });
+      
+      return true;
+    } else {
+      console.error('⚠️ Update completed but returned no data');
+      return false;
+    }
   } catch (err) {
-    console.error('🚨 Connection error:', err);
+    console.error('🚨 Error while calculating data on server start:', err);
+    
+    // Check if we have previously loaded data
+    if (Humans && Humans.data && Humans.data.length > 0) {
+      io.emit('dataUpdateFailed', { 
+        message: 'Update failed, using previous data',
+        lastSuccessfulUpdate: lastSuccessfulUpdate
+      });
+      return false;
+    } else {
+      // Try to load from cache directly as a last resort
+      try {
+        const cachedData = await redisClient.get('humanData:50300:0');
+        if (cachedData) {
+          Humans = JSON.parse(cachedData);
+          lastSuccessfulUpdate = new Date().toISOString();
+          console.log('✅ Loaded data from Redis cache as fallback');
+          
+          io.emit('dataUpdated', { 
+            timestamp: lastSuccessfulUpdate,
+            recordCount: Humans.data.length,
+            fromCache: true
+          });
+          
+          return true;
+        }
+      } catch (cacheErr) {
+        console.error('❌ Cache fallback also failed:', cacheErr);
+      }
+    }
+    
+    // No data available at all
+    io.emit('dataUnavailable', { message: 'Neither database nor cache data available' });
+    return false;
   }
 }
 
-startApp();
+async function startApp() {
+  console.log('Starting application...');
+  let mysqlConnected = false;
+  let sqlServerConnected = false;
+  
+  // Try to connect to MySQL, but continue even if it fails
+  try {
+    await db.sequelize.authenticate();
+    console.log('✅ MySQL connected');
+    mysqlConnected = true;
+  } catch (err) {
+    console.error('🚨 MySQL connection error:', err);
+  }
+  
+  // Try to connect to SQL Server, but continue even if it fails
+  try {
+    await connectSqlServer();
+    sqlServerConnected = true;
+  } catch (err) {
+    console.error('🚨 SQL Server connection error:', err);
+  }
+  
+  // Try to connect to Redis, but continue even if it fails
+  if (!redisClient.isReady) {
+    console.error('⚠️ Redis client not ready. Will keep trying to connect...');
+  }
+  
+  // Try to load data - even if databases are down, we might get cached data
+  try {
+    await calculateOnServerStart();
+  } catch (err) {
+    console.error('Initial data load failed completely:', err);
+  }
+  
+  // Start the server regardless of database or data load success
+  const PORT = process.env.PORT || 3000;
+  server.listen(PORT, () => {
+    console.log(`✅ Server đang chạy tại http://localhost:${PORT}`);
+    console.log(`Database status: MySQL ${mysqlConnected ? 'connected' : 'disconnected'}, SQL Server ${sqlServerConnected ? 'connected' : 'disconnected'}`);
+  });
+  
+  // Schedule periodic health checks and data refreshes
+  setInterval(async () => {
+    try {
+      await checkCircuitHealth();
+      
+      // If we have successful database connections, try to refresh data
+      if (!circuitState.mysqlCircuitOpen || !circuitState.sqlServerCircuitOpen) {
+        await calculateOnServerStart();
+      }
+    } catch (err) {
+      console.error('Scheduled health check failed:', err);
+    }
+  }, 60000); // Check every minute
+}
 
-
+// Start the application
+startApp().catch(err => {
+  console.error('Fatal application error:', err);
+});
