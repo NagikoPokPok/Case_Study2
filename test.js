@@ -55,6 +55,7 @@ async function fetchAndDisplayHumans() {
 
   const tbody = document.querySelector('tbody');
   tbody.innerHTML = ''; // Xóa dữ liệu cũ
+  console.log('humans', humans[0]);
 
   for(let i=0; i<20; i++){
   const human = humans[i];
@@ -63,7 +64,7 @@ async function fetchAndDisplayHumans() {
     <td>${human.Employee_Id}</td>
     <td>${human.ShareHolder}</td>
     <td>${human.Gender}</td>
-    <td>${human.Enthinitic}</td>
+    <td>${human.Ethnicity}</td>
     <td>${human.Employment_Status}</td>
     <td>${human.Department}</td>
     <td>${human.Paid_To_Date}</td>

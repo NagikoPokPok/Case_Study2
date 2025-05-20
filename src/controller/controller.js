@@ -24,4 +24,8 @@ async function getHumanData(req, res) {
   }
 }
 
+async function updateInfoController(req, res) {
+  
+}
+
 module.exports = { getHumanData };

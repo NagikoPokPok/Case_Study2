@@ -2,7 +2,7 @@ class Human {
     constructor(data) {
         this.Employee_Id = data.Employee_Id;
         this.ShareHolder = data.ShareHolder || false;
-        this.Gender = data.Gender || 'Unknown';
+        this.Gender = (data.Gender === undefined || data.Gender === null) ? 'Unknown' : data.Gender;
         this.Ethnicity = data.Ethnicity || 'Unknown';
         this.Employment_Status = data.Employment_Status || 'Unknown';
         this.Department = data.Department || 'Unknown';
