@@ -193,46 +193,46 @@ async function calculateOnServerStart() {
       lastId = result[result.length - 1]?.Employee_Id || lastId; // Tăng lastId để tải dữ liệu tiếp theo 
       batchCount++;
 
-    //   console.log(`📦 Batch ${batchCount}: Đã tải thêm ${dataBatch.length} bản ghi (Tổng: ${allHumans.length})`);
+      console.log(`📦 Batch ${batchCount}: Đã tải thêm ${dataBatch.length} bản ghi (Tổng: ${allHumans.length})`);
+    }
+
+    Humans = allHumans;
+    console.log(`🏁 Tổng cộng ${Humans.length} bản ghi đã được load vào bộ nhớ`);
+
+    //   console.log(`📦 Batch ${batchCount}: Loaded ${dataBatch.length} records (Total: ${allHumans.length})`);
+
+    //   if (batchCount >= 11 && batchCount <= 13) {
+    //     console.log(`Batch ${batchCount} first record:`, dataBatch[0]);
+    //   }
     // }
 
-    // Humans = allHumans;
-    // console.log(`🏁 Tổng cộng ${Humans.length} bản ghi đã được load vào bộ nhớ`);
+    // // Update the global Humans object with proper structure
+    // Humans = {
+    //   data: allHumans,
+    //   stats: {
+    //     recordCount: allHumans.length,
+    //     fixedStructure: true,
+    //     fromCache: false
+    //   }
+    // };
 
-      console.log(`📦 Batch ${batchCount}: Loaded ${dataBatch.length} records (Total: ${allHumans.length})`);
+    // lastSuccessfulUpdate = new Date().toISOString();
+    // console.log(`🏁 Total ${Humans.data.length} records loaded into memory`);
 
-      if (batchCount >= 11 && batchCount <= 13) {
-        console.log(`Batch ${batchCount} first record:`, dataBatch[0]);
-      }
-    }
+    // // Debug last records
+    // if (Humans.data.length > 500000) {
+    //   console.log("Sample employee record:", Humans.data[500199]);
+    //   console.log("Sample person record:", Humans.data[500099]);
+    // }
 
-    // Update the global Humans object with proper structure
-    Humans = {
-      data: allHumans,
-      stats: {
-        recordCount: allHumans.length,
-        fixedStructure: true,
-        fromCache: false
-      }
-    };
+    // // Notify connected clients of update
+    // io.emit('dataUpdated', {
+    //   timestamp: lastSuccessfulUpdate,
+    //   recordCount: Humans.data.length,
+    //   fromCache: false
+    // });
 
-    lastSuccessfulUpdate = new Date().toISOString();
-    console.log(`🏁 Total ${Humans.data.length} records loaded into memory`);
-
-    // Debug last records
-    if (Humans.data.length > 500000) {
-      console.log("Sample employee record:", Humans.data[500199]);
-      console.log("Sample person record:", Humans.data[500099]);
-    }
-
-    // Notify connected clients of update
-    io.emit('dataUpdated', {
-      timestamp: lastSuccessfulUpdate,
-      recordCount: Humans.data.length,
-      fromCache: false
-    });
-
-    return true;
+    // return true;
 
   } catch (err) {
     console.error('🚨 Lỗi khi tải dữ liệu Human:', err);
