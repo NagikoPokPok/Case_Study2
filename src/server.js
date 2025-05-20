@@ -148,9 +148,6 @@ async function calculateOnServerStart() {
         }
       });
 
-      // Debug the result structure
-      console.log(`Result type: ${typeof result}, has data: ${result && typeof result.data !== 'undefined'}, data length: ${result && result.data ? result.data.length : 'N/A'}`);
-
       // Handle the data based on its structure
       let dataBatch;
       if (result && result.data && Array.isArray(result.data)) {
@@ -196,7 +193,7 @@ async function calculateOnServerStart() {
 
     // Debug last records
     if (Humans.data.length > 500000) {
-      console.log("Sample employee record:", Humans.data[500199]);
+      console.log("Sample employee record:", Humans.data[100000]);
       console.log("Sample person record:", Humans.data[500099]);
     }
 
