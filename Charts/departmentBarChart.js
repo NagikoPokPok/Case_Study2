@@ -51,7 +51,9 @@ export function renderDepartmentBarChart(ctx, labels, data, colors, type) {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return context.parsed.y.toLocaleString() + " " + unit;
+                            return type === 'days'
+                                ? context.parsed.x.toLocaleString() + ' days'
+                                : compactUSD.format(context.parsed.x);
                         }
                     }
                 },
@@ -61,10 +63,12 @@ export function renderDepartmentBarChart(ctx, labels, data, colors, type) {
                     color: '#222',
                     font: { weight: 'bold' },
                     formatter: function(value) {
-                        return compactUSD.format(value);
+                        return type === 'days'
+                            ? value.toLocaleString() + ' days'
+                            : compactUSD.format(value);
                     }
                 }
-            }
+    }
         },
         plugins: [ChartDataLabels]
     });

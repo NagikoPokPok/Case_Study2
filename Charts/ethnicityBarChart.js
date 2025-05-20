@@ -36,23 +36,27 @@ export function renderEthnicityBarChart(ctx, labels, data, colors, type) {
                 easing: 'easeOutBounce'
             },            scales: {
                 x: { grid: { display: false } },
-                y: {
+                                y: {
                     beginAtZero: true,
                     max: maxValue + padding,
                     ticks: {
-                        callback: function(value) {
-                            return type === 'money' ? compactUSD.format(value) : value.toLocaleString() + ' days';
+                         callback: function(value) {
+                            return type === 'money'
+                                ? compactUSD.format(value)
+                                : value.toLocaleString() + ' days';
                         }
-                    }
                 }
+            }
             },
             plugins: {
                 legend: { display: false },                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return type === 'money' ? 
-                                compactUSD.format(context.parsed.y) : 
-                                context.parsed.y.toLocaleString() + ' days';
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return type === 'days'
+                                    ? context.parsed.x.toLocaleString() + ' days'
+                                    : compactUSD.format(context.parsed.x);
+                            }
                         }
                     }
                 },
@@ -62,7 +66,9 @@ export function renderEthnicityBarChart(ctx, labels, data, colors, type) {
                     color: '#222',
                     font: { weight: 'bold' },
                     formatter: function(value) {
-                        return type === 'money' ? compactUSD.format(value) : value.toLocaleString() + ' days';
+                        return type === 'days'
+                            ? value.toLocaleString() + ' days'
+                            : compactUSD.format(value);
                     }
                 }
             }
