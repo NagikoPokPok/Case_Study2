@@ -329,8 +329,13 @@ async function getHumanDataService(limit = 50000, lastId = 0) {
     }
 }
 
+async function updateInfoService() {
+
+}
+
 module.exports = { 
     getHumanDataService,
     checkCircuitHealth,
+    updateInfoService,
     circuitState 
 };

@@ -3,7 +3,6 @@ const cors = require('cors');
 const db = require('./models'); // Sequelize (MySQL)
 const { connectSqlServer } = require('./database/sqlServerConnection');
 const { getHumanData } = require('./controller/controller');  // Import controller
-const { getEmployeeStats } = require('./controller/employeeStatsController'); // Get data for chart
 const redisClient = require('./utils/redisClient'); // Redis client
 const { checkCircuitHealth, circuitState } = require('./service/service'); // Import circuit breaker status check
 
@@ -54,118 +53,11 @@ app.get('/api/humanList', (req, res) => {
     });
   }
 });
-// app.get('/api/humanList', async (req, res) => {
-//     try {
-//         if (!Humans || !Humans.data || Humans.data.length === 0) {
-//             console.log('No data available, attempting to load...');
-//             await calculateOnServerStart();
-//         }
-        
-//         // Double-check data availability and proper structure
-//         if (Humans && Humans.data && Array.isArray(Humans.data) && Humans.data.length > 0) {
-//             // Ensure each record has a Total_Earning property
-//             const validatedData = {
-//                 data: Humans.data.map(human => {
-//                     if (typeof human.Total_Earning === 'undefined') {
-//                         // Calculate Total_Earning if missing
-//                         const totalEarning = (human.Paid_To_Date || 0) + 
-//                                             (human.Average_Plan_Benefit || 0) + 
-//                                             ((human.Pay_Amount || 0) * 0.1);
-                        
-//                         return {
-//                             ...human,
-//                             Total_Earning: totalEarning
-//                         };
-//                     }
-//                     return human;
-//                 }),
-//                 nextLastId: Humans.nextLastId,
-//                 hasMore: Humans.hasMore,
-//                 stats: Humans.stats || { 
-//                     recordCount: Humans.data.length,
-//                     fixedStructure: true
-//                 }
-//             };
-            
-//             console.log(`Returning ${validatedData.data.length} records to client`);
-//             res.json(validatedData);
-//         } else {
-//             console.log('No valid data structure available after attempted load');
-            
-//             // Last effort - try to provide SOME data
-//             if (Humans && typeof Humans === 'object') {
-//                 // If Humans is an array
-//                 if (Array.isArray(Humans) && Humans.length > 0) {
-//                     const arrayData = {
-//                         data: Humans.map(human => ({
-//                             ...human,
-//                             Total_Earning: (human.Paid_To_Date || 0) + 
-//                                           (human.Average_Plan_Benefit || 0) + 
-//                                           ((human.Pay_Amount || 0) * 0.1)
-//                         })),
-//                         stats: { recordCount: Humans.length, fixedStructure: true }
-//                     };
-                    
-//                     console.log(`Returning ${arrayData.data.length} records (fixed structure) to client`);
-//                     res.json(arrayData);
-//                     return;
-//                 }
-                
-//                 // If Humans has any array property
-//                 for (const key in Humans) {
-//                     if (Array.isArray(Humans[key]) && Humans[key].length > 0) {
-//                         const propData = {
-//                             data: Humans[key].map(human => ({
-//                                 ...human,
-//                                 Total_Earning: (human.Paid_To_Date || 0) + 
-//                                               (human.Average_Plan_Benefit || 0) + 
-//                                               ((human.Pay_Amount || 0) * 0.1)
-//                             })),
-//                             stats: { recordCount: Humans[key].length, fixedStructure: true }
-//                         };
-                        
-//                         console.log(`Returning ${propData.data.length} records from property ${key} to client`);
-//                         res.json(propData);
-//                         return;
-//                     }
-//                 }
-//             }
-            
-//             res.status(503).json({ 
-//                 error: 'Data unavailable', 
-//                 message: 'No data available. Services may be initializing.' 
-//             });
-//         }
-//     } catch (error) {
-//         console.error('API endpoint error:', error);
-//         res.status(500).json({
-//             error: 'Server error',
-//             message: error.message
-//         });
-//     }
-// });
-
-// // Hàm gọi API tính toán khi server chạy lần đầu
-// async function calculateOnServerStart() {
-//   try {
-//     // Gọi controller với chỉ request params
-//     const result = await getHumanData({ 
-//       query: {
-//         limit: 50300, 
-//         lastId: 0 
-//       }
-//     });
-    
-//     Humans = result; // Lưu kết quả vào biến Humans
-//     console.log('Đã cập nhật dữ liệu Humans mới nhất');
-//   } catch (err) {
-//     console.error('🚨 Error while calculating data on server start:', err);
-//   }
-// }
 
 // Hàm gọi API tính toán khi server chạy lần đầu
 async function calculateOnServerStart() {
   try {
+    console.log('🔄 Starting data refresh process...');
     let lastId = 0;
     let allHumans = [];
     let batchCount = 0;
@@ -177,10 +69,10 @@ async function calculateOnServerStart() {
           lastId
         }
       });
-      // console.log('Đã tải dữ liệu từ API:', result);
 
-      const dataBatch = result;
-      // console.log('Đã tải dữ liệu từ API:', result.length);
+      // Handle the data based on its structure
+      const dataBatch = result;;
+
       if (!dataBatch || dataBatch.length === 0) {
         // console.log('⛔ Không còn dữ liệu để tải.');
         lastId += 50000; // Tăng lastId để tránh vòng lặp vô hạn
@@ -199,46 +91,10 @@ async function calculateOnServerStart() {
     Humans = allHumans;
     console.log(`🏁 Tổng cộng ${Humans.length} bản ghi đã được load vào bộ nhớ`);
 
-    //   console.log(`📦 Batch ${batchCount}: Loaded ${dataBatch.length} records (Total: ${allHumans.length})`);
-
-    //   if (batchCount >= 11 && batchCount <= 13) {
-    //     console.log(`Batch ${batchCount} first record:`, dataBatch[0]);
-    //   }
-    // }
-
-    // // Update the global Humans object with proper structure
-    // Humans = {
-    //   data: allHumans,
-    //   stats: {
-    //     recordCount: allHumans.length,
-    //     fixedStructure: true,
-    //     fromCache: false
-    //   }
-    // };
-
-    lastSuccessfulUpdate = new Date().toISOString();
-    console.log(`🏁 Total ${Humans.data.length} records loaded into memory`);
-
-    // // Debug last records
-    // if (Humans.data.length > 500000) {
-    //   console.log("Sample employee record:", Humans.data[500199]);
-    //   console.log("Sample person record:", Humans.data[500099]);
-    // }
-
-    // Notify connected clients of update
-    io.emit('dataUpdated', {
-      timestamp: lastSuccessfulUpdate,
-      recordCount: Humans.data.length,
-      fromCache: false
-    });
-
-    return true;
-
   } catch (err) {
     console.error('🚨 Lỗi khi tải dữ liệu Human:', err);
   }
 }
-
 
 // Tạo server HTTP và kết nối với Socket.io
 const server = http.createServer(app);
