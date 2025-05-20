@@ -6,10 +6,12 @@ const { getHumanData } = require('./controller/controller');  // Import controll
 const redisClient = require('./utils/redisClient'); // Redis client
 const { checkCircuitHealth, circuitState } = require('./service/service'); // Import circuit breaker status check
 
+const { startConsumer } = require('./utils/rabbitConsumer'); // RabbitMQ consumer
+
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
-const { startRabbitConsumer, onQueueUpdated } = require('../rabbitReceiver'); // Import consumer
+// const { startRabbitConsumer, onQueueUpdated } = require('../rabbitReceiver'); // Import consumer
 
 //route
 const route = require('./route/route');
@@ -19,6 +21,10 @@ let Humans = [];
 let lastSuccessfulUpdate = null;
 let isDataRefreshInProgress = false; // Flag to prevent concurrent refresh operations
 let dataRefreshNeeded = false; // Flag to indicate if data refresh is needed
+
+function getHumans() {
+  return Humans;
+}
 
 const app = express();
 app.use(cors());
@@ -97,6 +103,23 @@ async function calculateOnServerStart() {
   }
 }
 
+async function handlePersonalChangeMessage(message) {
+  console.log('Received message from personal_changes queue:', message);
+  
+  // Khi nhận được message, load lại dữ liệu mới
+  await calculateOnServerStart();
+}
+
+// Khởi động consumer và xử lý message
+async function startRabbitConsumer() {
+  try {
+    await startConsumer('personal_changes', handlePersonalChangeMessage);
+    console.log('RabbitMQ consumer for personal_changes started');
+  } catch (err) {
+    console.error('Failed to start RabbitMQ consumer:', err);
+  }
+}
+
 // Tạo server HTTP và kết nối với Socket.io
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -147,30 +170,30 @@ try {
   // Continue app execution even if RabbitMQ fails
 }
 
-// Listen for RabbitMQ messages
-onQueueUpdated('benefit_plan_changes', async (message) => {
-  console.log('Emitting to WebSocket from benefit_plan_changes:', message);
-  io.emit('benefitPlanUpdated', { message });
+// // Listen for RabbitMQ messages
+// onQueueUpdated('benefit_plan_changes', async (message) => {
+//   console.log('Emitting to WebSocket from benefit_plan_changes:', message);
+//   io.emit('benefitPlanUpdated', { message });
 
-  // Flag check refresh needed
-  dataRefreshNeeded = true;
+//   // Flag check refresh needed
+//   dataRefreshNeeded = true;
   
-  if (!isDataRefreshInProgress) {
-    await calculateOnServerStart();
-  }
-});
+//   if (!isDataRefreshInProgress) {
+//     await calculateOnServerStart();
+//   }
+// });
 
-onQueueUpdated('personal_changes', async (message) => {
-  console.log('Emitting to WebSocket from personal_changes:', message);
-  io.emit('personalChanged', { message });
+// onQueueUpdated('personal_changes', async (message) => {
+//   console.log('Emitting to WebSocket from personal_changes:', message);
+//   io.emit('personalChanged', { message });
 
-  // Flag check refresh needed
-  dataRefreshNeeded = true;
+//   // Flag check refresh needed
+//   dataRefreshNeeded = true;
   
-  if (!isDataRefreshInProgress) {
-    await calculateOnServerStart();
-  }
-});
+//   if (!isDataRefreshInProgress) {
+//     await calculateOnServerStart();
+//   }
+// });
 
 // Phục vụ trang HTML (frontend)
 app.get('/', (req, res) => {
@@ -210,6 +233,8 @@ async function startApp() {
   } catch (err) {
     console.error('Initial data load failed completely:', err);
   }
+
+  await startRabbitConsumer();
   
   // Start the server regardless of database or data load success
   const PORT = process.env.PORT || 3000;
@@ -238,3 +263,5 @@ async function startApp() {
 startApp().catch(err => {
   console.error('Fatal application error:', err);
 });
+
+module.exports = { getHumans };

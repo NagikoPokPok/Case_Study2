@@ -1,4 +1,7 @@
-const { getHumanDataService } = require('../service/service');
+const { getHumanDataService, updateInfoService } = require('../service/service');
+const { sendMessage } = require('../utils/rabbitProducer');
+const { getHumans } = require('../server');
+
 
 async function getHumanData(req, res) {
   const limit = req?.query?.limit || 50000;
@@ -24,8 +27,26 @@ async function getHumanData(req, res) {
   }
 }
 
-async function updateInfoController(req, res) {
-  
+async function updateEmployee(req, res) {
+  const Humans = getHumans();
+  try {
+    const humanData = req.body;
+
+    const idx = Humans.findIndex(h => h.Employee_Id === humanData.Employee_Id);
+    if (idx >= 0) {
+      Humans[idx] = { ...Humans[idx], ...humanData };
+    } else {
+      Humans.push(humanData);
+    }
+
+    await sendMessage('personal_changes', { employeeId: humanData.Employee_Id, action: 'update' });
+
+    res.json({ success: true, message: 'Cập nhật thành công (chỉ bộ nhớ)' });
+  } catch (error) {
+    console.error('Update failed:', error);
+    res.status(500).json({ success: false, message: 'Lỗi cập nhật dữ liệu' });
+  }
 }
 
-module.exports = { getHumanData };
+
+module.exports = { getHumanData, updateEmployee };
