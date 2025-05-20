@@ -82,8 +82,8 @@ const enhancedRedisClient = {
         console.log('⚠️ Redis not ready when attempting to delete', key);
         return false;
       }
-      if (!key) {
-        console.error('⚠️ Attempted to delete with empty key');
+      if (!key || typeof key !== 'string' || key.trim() === '') {
+        console.error(`⚠️ Attempted to delete with invalid key: "${key}"`);
         return false;
       }
       await redisClient.del(key);

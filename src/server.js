@@ -101,7 +101,9 @@ async function calculateOnServerStart() {
     // Delete old data from Redis cache
     const keys = [];
     for await (const key of redisClient.scanIterator({ MATCH: 'humanData:*' })) {
-      keys.push(key);
+      if (key && typeof key === 'string' && key.trim() !== '') {
+        keys.push(key);
+      }
     }
     for (const key of keys) {
       await redisClient.del(key);
