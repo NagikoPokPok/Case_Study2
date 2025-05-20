@@ -249,59 +249,54 @@
 
     <script type="module" src="/src/public/total-earning.js"></script>
 
-    <!-- <script>
-        let socket;
-        const messageHistoryKey = 'messageHistory'; // Key lưu trữ thông báo trong localStorage
+<script>
+  // Khởi tạo kết nối tới WebSocket server
+  const socket = io('http://localhost:3000'); // Đổi thành đúng port server của bạn
 
-        // Lấy thông báo đã lưu trong localStorage
-        let messageHistory = JSON.parse(localStorage.getItem(messageHistoryKey)) || []; 
+  socket.on('connect', () => {
+    console.log('WebSocket connected');
+  });
 
-        // Hàm hiển thị thông báo
-        function displayMessages() {
-            console.log('Displaying messages:', messageHistory);
-            // window.location.reload()
-        }
+  socket.on('disconnect', () => {
+    console.log('WebSocket disconnected, trying to reconnect...');
+  });
 
-        // Hàm khởi tạo WebSocket và kết nối lại nếu bị mất
-        function initSocket() {
-            try {
-                socket = io('http://localhost:5500'); // Kết nối đến WebSocket server
+  // Lắng nghe sự kiện personalChanged, benefitPlanUpdated, hoặc dataUpdated
+  socket.on('personalChanged', (data) => {
+    console.log('Received personalChanged event:', data);
+    // Gọi lại API lấy dữ liệu mới hoặc trực tiếp cập nhật UI
+    updateDataFromAPI();
+  });
 
-            socket.on('benefitPlanUpdated', (data) => {
-                console.log('Received from WebSocket:', data.message);
-                // Lưu thông điệp mới vào history và hiển thị tất cả thông điệp đã nhận
-                messageHistory.push('Benefit Plan: ' + data.message);
-                localStorage.setItem(messageHistoryKey, JSON.stringify(messageHistory)); // Lưu vào localStorage
-                displayMessages();
-            });
+  socket.on('benefitPlanUpdated', (data) => {
+    console.log('Received benefitPlanUpdated event:', data);
+    updateDataFromAPI();
+  });
 
-            socket.on('personalChanged', (data) => {
-                console.log('Received from WebSocket:', data.message);
-                // Lưu thông điệp mới vào history và hiển thị tất cả thông điệp đã nhận
-                messageHistory.push('Personal Data: ' + data.message);
-                localStorage.setItem(messageHistoryKey, JSON.stringify(messageHistory)); // Lưu vào localStorage
-                displayMessages();
-            });
+  socket.on('dataUpdated', (data) => {
+    console.log('Received dataUpdated event:', data);
+    updateDataFromAPI();
+  });
 
-            socket.on('connect', () => {
-                console.log('WebSocket connected');
-            });
+  // Hàm gọi API lấy dữ liệu mới và cập nhật UI
+  async function updateDataFromAPI() {
+    try {
+      const response = await fetch('http://localhost:3000/api/humanList');
+      if (!response.ok) throw new Error('Failed to fetch data');
+      const result = await response.json();
 
-            socket.on('disconnect', () => {
-                console.log('WebSocket disconnected. Reconnecting...');
-                setTimeout(initSocket, 2000);  // Tái kết nối sau 2 giây nếu mất kết nối
-            });
-            } catch (error) {
-                
-            }
-        }
+      // Xử lý update UI dựa trên result
+      console.log('Data from API:', result);
+      // Gọi hàm vẽ biểu đồ, cập nhật số liệu, ... (đã có trong total-earning.js)
+      // Ví dụ gọi lại hàm load data và render lại biểu đồ
+    } catch (err) {
+      console.error('Error updating data:', err);
+    }
+  }
 
-        // Khởi động kết nối WebSocket ngay khi trang được tải
-        initSocket();
-
-        // Hiển thị thông điệp đã lưu khi tải lại trang
-        displayMessages();
-    </script> -->
+  // Có thể gọi updateDataFromAPI() khi trang load lần đầu để đảm bảo UI có dữ liệu
+  updateDataFromAPI();
+</script>
 
 </body>
 </html>
