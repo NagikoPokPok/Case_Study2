@@ -170,6 +170,9 @@ async function getHumanDataService(limit = 50000, lastId = 0) {
         });
 
         // 4. Resolve the data
+
+        console.log(`Found ${employeeData.length} employees and ${personalData.length} personal records`);
+
         const humans = [];
         let currentIdx = 0;
         const batchSize = 5000;
@@ -292,9 +295,17 @@ async function getHumanDataService(limit = 50000, lastId = 0) {
             }
         }
 
+        if (humans.length === 0) {
+            console.error('No records after merging:', {
+                employeeCount: employeeData.length,
+                personalCount: personalData.length
+            });
+        }
+
+
         const result = {
             data: humans,
-            nextLastId: employeeData[employeeData.length - 1].idEmployee,
+            nextLastId: employeeData[employeeData.length - 1]?.idEmployee || lastId,
             hasMore: employeeData.length === limit,
             stats: {
                 queryTime: Date.now() - startTime,

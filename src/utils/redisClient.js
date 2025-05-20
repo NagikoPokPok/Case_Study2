@@ -1,3 +1,5 @@
+// Fix for redisClient.js to ensure proper cache handling
+
 const redis = require('redis');
 
 // Configure Redis with retry strategy
@@ -22,21 +24,25 @@ redisClient.connect().catch(err => {
 // Handle connected event
 redisClient.on('connect', () => {
   console.log('✅ Redis client connected');
+  enhancedRedisClient.isReady = true;
 });
 
 // Handle connection error
 redisClient.on('error', (err) => {
   console.error('❌ Redis Client Error:', err);
+  enhancedRedisClient.isReady = false;
 });
 
 // Handle reconnected event
 redisClient.on('reconnecting', () => {
   console.log('🔄 Redis client reconnecting...');
+  enhancedRedisClient.isReady = false;
 });
 
 // Handle end event
 redisClient.on('end', () => {
   console.log('⚠️ Redis client connection closed');
+  enhancedRedisClient.isReady = false;
 });
 
 // Enhanced Redis client with more resilient methods
@@ -51,8 +57,13 @@ const enhancedRedisClient = {
         return null;
       }
       
-      this.isReady = true;
-      return await redisClient.get(key);
+      this.isReady = redisClient.isReady;
+      const result = await redisClient.get(key);
+      
+      // Debug what we're getting from Redis
+      console.log(`Redis get: ${key}, result type: ${typeof result}, result length: ${result ? result.length : 0}`);
+      
+      return result;
     } catch (err) {
       console.error(`❌ Redis get error for key ${key}:`, err);
       this.isReady = false;
@@ -68,8 +79,30 @@ const enhancedRedisClient = {
         return false;
       }
       
-      this.isReady = true;
+      this.isReady = redisClient.isReady;
+      
+      // Validate the value to ensure it's properly formatted
+      if (typeof value === 'string') {
+        try {
+          // Check if it's a valid JSON string with data
+          if (value.includes('"data"')) {
+            const parsed = JSON.parse(value);
+            if (!parsed.data || !Array.isArray(parsed.data) || parsed.data.length === 0) {
+              console.error('⚠️ Attempting to cache invalid data structure:', parsed);
+              return false;
+            }
+          }
+        } catch (parseErr) {
+          console.error('⚠️ Invalid JSON being cached:', parseErr);
+          return false;
+        }
+      } else {
+        console.error('⚠️ Non-string value being cached');
+        return false;
+      }
+      
       await redisClient.setEx(key, ttl, value);
+      console.log(`✅ Successfully cached data at key: ${key}`);
       return true;
     } catch (err) {
       console.error(`❌ Redis setEx error for key ${key}:`, err);
@@ -90,9 +123,10 @@ const enhancedRedisClient = {
   }
 };
 
-// Update isReady status based on Redis client's status
+// Sync isReady state with the underlying client
+// Use a shorter interval for more responsive status updates
 setInterval(() => {
   enhancedRedisClient.isReady = redisClient.isReady;
-}, 5000);
+}, 2000);
 
 module.exports = enhancedRedisClient;
