@@ -209,10 +209,23 @@ async function handlePersonalChangeMessage(message) {
 }
 
 // Khởi động consumer và xử lý message
+// async function startRabbitConsumer() {
+//   try {
+//     await startConsumer('personal_changes', handlePersonalChangeMessage);
+//     console.log('RabbitMQ consumer for personal_changes started');
+//   } catch (err) {
+//     console.error('Failed to start RabbitMQ consumer:', err);
+//   }
+// }
 async function startRabbitConsumer() {
   try {
-    await startConsumer('personal_changes', handlePersonalChangeMessage);
-    console.log('RabbitMQ consumer for personal_changes started');
+    await startConsumer(
+      'personal_changes_exchange',       // Tên Exchange
+      'personal_changes_myapp_queue',    // Queue riêng của hệ thống bạn
+      handlePersonalChangeMessage,       // Hàm xử lý message nhận được
+      'myapp'                           // senderId, để hệ thống bạn bỏ qua message do chính nó gửi
+    );
+    console.log('RabbitMQ consumer for personal_changes_exchange started');
   } catch (err) {
     console.error('Failed to start RabbitMQ consumer:', err);
   }
@@ -229,31 +242,6 @@ try {
   console.error('RabbitMQ consumer failed to start:', err);
   // Continue app execution even if RabbitMQ fails
 }
-
-// // Listen for RabbitMQ messages
-// onQueueUpdated('benefit_plan_changes', async (message) => {
-//   console.log('Emitting to WebSocket from benefit_plan_changes:', message);
-//   io.emit('benefitPlanUpdated', { message });
-
-//   // Flag check refresh needed
-//   dataRefreshNeeded = true;
-  
-//   if (!isDataRefreshInProgress) {
-//     await calculateOnServerStart();
-//   }
-// });
-
-// onQueueUpdated('personal_changes', async (message) => {
-//   console.log('Emitting to WebSocket from personal_changes:', message);
-//   io.emit('personalChanged', { message });
-
-//   // Flag check refresh needed
-//   dataRefreshNeeded = true;
-  
-//   if (!isDataRefreshInProgress) {
-//     await calculateOnServerStart();
-//   }
-// });
 
 // Phục vụ trang HTML (frontend)
 app.get('/', (req, res) => {

@@ -2,6 +2,8 @@ const { getHumanDataService, updateInfoService } = require('../service/service')
 const { sendMessage } = require('../utils/rabbitProducer');
 const { getHumans } = require('../utils/dataStore');
 
+const EXCHANGE_NAME = 'personal_changes_exchange';
+const SENDER_ID = 'myapp'; // Mã định danh hệ thống gửi để consumer khác lọc
 
 async function getHumanData(req, res) {
   const limit = req?.query?.limit || 50000;
@@ -39,7 +41,13 @@ async function updateEmployee(req, res) {
       Humans.push(humanData);
     }
 
-    await sendMessage('personal_changes', { Employee_ID: humanData.Employee_Id, Operation: 'Update' , data: humanData});
+    // await sendMessage('personal_changes_myapp', { Employee_ID: humanData.Employee_Id, Operation: 'Update' , data: humanData});
+    await sendMessage(EXCHANGE_NAME, '', {
+      senderId: SENDER_ID,
+      Employee_ID: humanData.Employee_Id,
+      Operation: 'Update',
+      data: humanData
+    });
 
     res.json({ success: true, message: 'Cập nhật thành công (chỉ bộ nhớ)' });
   } catch (error) {
@@ -65,7 +73,8 @@ async function addEmployee(req, res) {
     humans.push(humanData);
 
     // Gửi message lên RabbitMQ để các hệ thống khác xử lý
-    await sendMessage('personal_changes', {
+    await sendMessage(EXCHANGE_NAME, '', {
+      senderId: SENDER_ID,
       Employee_ID: humanData.Employee_Id,
       Operation: 'Add',
       data: humanData
@@ -105,7 +114,8 @@ async function deleteEmployee(req, res) {
     }
 
     // Gửi message thông báo xóa cho các hệ thống khác qua RabbitMQ
-    await sendMessage('personal_changes', {
+    await sendMessage(EXCHANGE_NAME, '', {
+      senderId: SENDER_ID,
       Employee_ID: empIdNum,
       Operation: 'Delete'
     });
