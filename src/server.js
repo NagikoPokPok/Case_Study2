@@ -131,7 +131,7 @@ async function handlePersonalChangeMessage(message) {
 
   try {
     const humans = getHumans();
-    const empId = message.Employee_ID;
+    const empId = Number(message.Employee_ID);
     const operation = message.Operation;
     const data = message.data;
 
@@ -229,6 +229,31 @@ try {
   console.error('RabbitMQ consumer failed to start:', err);
   // Continue app execution even if RabbitMQ fails
 }
+
+// // Listen for RabbitMQ messages
+// onQueueUpdated('benefit_plan_changes', async (message) => {
+//   console.log('Emitting to WebSocket from benefit_plan_changes:', message);
+//   io.emit('benefitPlanUpdated', { message });
+
+//   // Flag check refresh needed
+//   dataRefreshNeeded = true;
+  
+//   if (!isDataRefreshInProgress) {
+//     await calculateOnServerStart();
+//   }
+// });
+
+// onQueueUpdated('personal_changes', async (message) => {
+//   console.log('Emitting to WebSocket from personal_changes:', message);
+//   io.emit('personalChanged', { message });
+
+//   // Flag check refresh needed
+//   dataRefreshNeeded = true;
+  
+//   if (!isDataRefreshInProgress) {
+//     await calculateOnServerStart();
+//   }
+// });
 
 // Phục vụ trang HTML (frontend)
 app.get('/', (req, res) => {

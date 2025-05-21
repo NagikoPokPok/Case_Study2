@@ -87,17 +87,36 @@ async function deleteEmployee(req, res) {
   try {
     const employeeId = req.params.id;
 
-    // TODO: Xóa khỏi DB hoặc bộ nhớ (nếu có)
+    if (!employeeId) {
+          return res.status(400).json({ success: false, message: 'Thiếu employeeId để xóa' });
+        }
 
-    await sendMessage('personal_changes', { 
-      Employee_ID: employeeId, 
-      Operation: 'Delete' 
+    const empIdNum = Number(employeeId);
+    const humans = getHumans();
+
+    // Tìm index nhân viên trong bộ nhớ
+    const idx = humans.findIndex(h => h.Employee_Id === empIdNum);
+
+    if (idx >= 0) {
+      // Xóa khỏi bộ nhớ
+      humans.splice(idx, 1);
+      console.log(`Deleted employee with ID ${empIdNum} from memory`);
+    } else {
+      console.log(`Employee ID ${empIdNum} không tồn tại trong bộ nhớ để xóa`);
+      return res.status(404).json({ success: false, message: 'Nhân viên không tồn tại để xóa' });
+    }
+
+    // Gửi message thông báo xóa cho các hệ thống khác qua RabbitMQ
+    await sendMessage('personal_changes', {
+      Employee_ID: empIdNum,
+      Operation: 'Delete'
     });
 
-    res.json({ success: true, message: 'Xóa nhân viên thành công' });
+    return res.json({ success: true, message: 'Xóa nhân viên thành công' });
+
   } catch (error) {
     console.error('Delete failed:', error);
-    res.status(500).json({ success: false, message: 'Lỗi xóa nhân viên' });
+    return res.status(500).json({ success: false, message: 'Lỗi xóa nhân viên' });
   }
 }
 

@@ -89,7 +89,7 @@
         Department: document.getElementById('add_Department').value
       };
 
-      const res = await fetch('http://localhost:3000/api/route/employee', {
+      const res = await fetch('http://localhost:3000/api/route/addEmployee', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newHuman)
