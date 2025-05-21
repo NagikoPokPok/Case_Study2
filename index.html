@@ -21,6 +21,10 @@
 
 </head>
 <body>
+<div id="error-container" style="display:none; color:red; margin:10px 0;">
+  <span id="error-message"></span>
+</div>
+
     <div class="connection-indicator">
     <span id="connection-status" class="status-disconnected">WebSocket: disconnected</span>
     </div>
@@ -295,7 +299,7 @@
     function updateDashboardWithData(data) {
     if (!data || !Array.isArray(data) || data.length === 0) {
         console.warn('No valid data for dashboard update:', data);
-        return;
+        return; 
     }
         
         console.log('Updating dashboard with new data');

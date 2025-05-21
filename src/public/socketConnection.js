@@ -7,6 +7,11 @@ class SocketClient {
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
         this.eventCallbacks = {};
+        
+        // Debounce properties
+        this.lastDataFetch = 0;
+        this.debounceTimeout = null;
+        this.debounceInterval = 5000; // 5 seconds between data refreshes
     }
 
     setupEventHandlers() {
@@ -39,10 +44,8 @@ class SocketClient {
                 if (this.eventCallbacks[eventName]) {
                     this.eventCallbacks[eventName].forEach(callback => callback(data));
                 }
-                // Always trigger data refresh if updateDataFromAPI is defined
-                if (typeof updateDataFromAPI === 'function') {
-                    updateDataFromAPI();
-                }
+                // Use debounced update to prevent excessive API calls
+                this.debouncedUpdateDataFromAPI();
             });
         });
 
@@ -86,41 +89,64 @@ class SocketClient {
             this.updateConnectionStatus('failed');
         }
     }
+    
+    // Debounced API update function
+    debouncedUpdateDataFromAPI() {
+        const now = Date.now();
+        if (this.debounceTimeout) clearTimeout(this.debounceTimeout);
+
+        // Only allow one fetch per debounceInterval
+        if (now - this.lastDataFetch < this.debounceInterval) {
+            this.debounceTimeout = setTimeout(() => {
+                updateDataFromAPI();
+            }, this.debounceInterval - (now - this.lastDataFetch));
+            return;
+        }
+        
+        // Update the timestamp and trigger the update
+        this.lastDataFetch = now;
+        updateDataFromAPI();
+    }
 }
 
-let lastDataFetch = 0;
-let debounceTimeout = null;
+// Only keep one instance of fetch data
+let isFetching = false;
 
 async function updateDataFromAPI() {
-    const now = Date.now();
-    if (debounceTimeout) clearTimeout(debounceTimeout);
-
-    // Debounce: only allow one fetch per 500ms
-    if (now - lastDataFetch < 500) {
-        debounceTimeout = setTimeout(updateDataFromAPI, 500 - (now - lastDataFetch));
+    // Prevent concurrent fetches
+    if (isFetching) {
+        console.log('Data fetch already in progress, skipping...');
         return;
     }
-    lastDataFetch = now;
-
+    
+    isFetching = true;
+    
     try {
         console.log('Fetching fresh data from API...');
         const response = await fetch('http://localhost:3000/api/humanList');
+        
         if (!response.ok) throw new Error('Failed to fetch data');
+        
         const result = await response.json();
-
         console.log('Data refreshed from API:', result.length);
 
-        // Dispatch a custom event that other scripts can listen for
-        const event = new CustomEvent('dataRefreshed', { detail: result });
-        document.dispatchEvent(event);
+        // Only dispatch event if we have valid data
+        if (result && Array.isArray(result) && result.length > 0) {
+            // Dispatch a custom event that other scripts can listen for
+            const event = new CustomEvent('dataRefreshed', { detail: result });
+            document.dispatchEvent(event);
+        }
 
         return result;
-    } catch (err) {
-        
-        console.error('Error updating data:', err);
-        // Add this log:
-        document.dispatchEvent(new CustomEvent('dataRefreshed', { detail: null }));
-        return null;
+    } catch (error) {
+        console.error('Error updating data:', error);
+        // Show error message in UI
+        if (document.getElementById('error-message')) {
+            document.getElementById('error-message').textContent = `Connection error: ${error.message}`;
+            document.getElementById('error-container').style.display = 'block';
+        }
+    } finally {
+        isFetching = false;
     }
 }
 

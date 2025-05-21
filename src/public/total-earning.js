@@ -11,7 +11,7 @@ async function fetchHumanData() {
         
         // Add a timeout to the fetch request
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
         
         // Call API to fetch data with timeout
         const response = await fetch(`http://localhost:3000/api/humanList`, {
@@ -89,15 +89,21 @@ async function fetchHumanData() {
             return item;
         });
 
-    } catch (error) {
-        console.error('Error fetching data:', error);
-        
-        // Show error message to user
-        document.getElementById('error-message').textContent = 
-            `Connection error: ${error.message}`;
-        document.getElementById('error-container').style.display = 'block';
-        
-        return []; 
+            } catch (error) {
+        if (error.name === 'AbortError') {
+            console.error('Fetch aborted due to timeout');
+            if (document.getElementById('error-message')) {
+                document.getElementById('error-message').textContent = 'Request timed out. Please try again later.';
+                document.getElementById('error-container').style.display = 'block';
+            }
+        } else {
+            console.error('Error fetching data:', error);
+            if (document.getElementById('error-message')) {
+                document.getElementById('error-message').textContent = `Connection error: ${error.message}`;
+                document.getElementById('error-container').style.display = 'block';
+            }
+        }
+        return [];
     }
 }
 
