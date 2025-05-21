@@ -10,11 +10,15 @@ const { startConsumer } = require('./utils/rabbitConsumer'); // RabbitMQ consume
 
 const http = require('http');
 const { Server } = require('socket.io');
+const socketManager = require('./websocket/socketManager'); // Socket.io manager
 const path = require('path');
 // const { startRabbitConsumer, onQueueUpdated } = require('../rabbitReceiver'); // Import consumer
 
 //route
 const route = require('./route/route');
+
+// Create server
+// const server = http.createServer(app);
 
 //Human merge
 let Humans = [];
@@ -136,7 +140,9 @@ async function handlePersonalChangeMessage(message) {
 
   try {
     isDataRefreshInProgress = true;
-    console.log('Starting data refresh due to database changes...');    // Clear existing Redis cache
+    console.log('Starting data refresh due to database changes...');
+    
+    // Clear existing Redis cache
     const keys = [];
     for await (const key of redisClient.scanIterator({ MATCH: 'humanData:*' })) {
       if (key) {  // Only add non-empty keys
@@ -155,6 +161,15 @@ async function handlePersonalChangeMessage(message) {
     
     lastSuccessfulUpdate = new Date().toISOString();
     console.log('Data refresh completed successfully');
+    
+    // Notify all connected clients about the update
+    socketManager.getInstance().broadcastUpdate('personalChanged', { 
+      message: 'Personal data refreshed',
+      timestamp: new Date().toISOString(),
+      lastUpdate: lastSuccessfulUpdate,
+      recordCount: Humans.length 
+    });
+    
   } catch (err) {
     console.error('Failed to refresh data:', err);
   } finally {
@@ -180,12 +195,7 @@ async function startRabbitConsumer() {
 
 // Tạo server HTTP và kết nối với Socket.io
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  }
-});
+const io = socketManager.initialize(server).io;
 
 // Start RabbitMQ consumer (if available)
 try {
@@ -195,34 +205,38 @@ try {
   // Continue app execution even if RabbitMQ fails
 }
 
-// // Listen for RabbitMQ messages
-// onQueueUpdated('benefit_plan_changes', async (message) => {
-//   console.log('Emitting to WebSocket from benefit_plan_changes:', message);
-//   io.emit('benefitPlanUpdated', { message });
-
-//   // Flag check refresh needed
-//   dataRefreshNeeded = true;
-  
-//   if (!isDataRefreshInProgress) {
-//     await calculateOnServerStart();
-//   }
-// });
-
-// onQueueUpdated('personal_changes', async (message) => {
-//   console.log('Emitting to WebSocket from personal_changes:', message);
-//   io.emit('personalChanged', { message });
-
-//   // Flag check refresh needed
-//   dataRefreshNeeded = true;
-  
-//   if (!isDataRefreshInProgress) {
-//     await calculateOnServerStart();
-//   }
-// });
-
-// Phục vụ trang HTML (frontend)
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.post('/api/triggerRefresh', async (req, res) => {
+  try {
+    // Check if a refresh is already in progress
+    if (isDataRefreshInProgress) {
+      return res.status(429).json({ message: 'A data refresh is already in progress' });
+    }
+    
+    // Trigger a data refresh with a dummy message
+    await handlePersonalChangeMessage({ source: 'manual', trigger: 'api' });
+    
+    // Return success
+    res.json({ message: 'Data refresh triggered successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to trigger refresh', message: err.message });
+  }
+});
+
+// Add API endpoint to get WebSocket connection status
+app.get('/api/socket/status', (req, res) => {
+  try {
+    const socketManagerInstance = socketManager.getInstance();
+    res.json({
+      connections: socketManagerInstance.getConnectionCount(),
+      status: 'active'
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get socket status', message: err.message });
+  }
 });
 
 

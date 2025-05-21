@@ -18,9 +18,39 @@
 
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
 </head>
 <body>
+    <div class="connection-indicator">
+    <span id="connection-status" class="status-disconnected">WebSocket: disconnected</span>
+    </div>
+    <style>
+    .connection-indicator {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        z-index: 1000;
+    }
+    .status-connected {
+        background-color: #4CAF50;
+        color: white;
+    }
+    .status-disconnected {
+        background-color: #f44336;
+        color: white;
+    }
+    .status-error {
+        background-color: #ff9800;
+        color: white;
+    }
+    .status-failed {
+        background-color: #9E9E9E;
+        color: white;
+    }
+    </style>
 
     <div class="wrapper">
         <div class="container">
@@ -249,54 +279,69 @@
 
     <script type="module" src="/src/public/total-earning.js"></script>
 
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="/src/public/socketConnection.js"></script>
+
+<!-- Data refresh script that integrates with the charts -->
 <script>
-  // Khởi tạo kết nối tới WebSocket server
-  const socket = io('http://localhost:3000'); // Đổi thành đúng port server của bạn
+    // Listen for the dataRefreshed event to update charts
+    document.addEventListener('dataRefreshed', function(event) {
+        const data = event.detail;
+        // Update all charts and statistics
+        updateDashboardWithData(data);
+    });
 
-  socket.on('connect', () => {
-    console.log('WebSocket connected');
-  });
-
-  socket.on('disconnect', () => {
-    console.log('WebSocket disconnected, trying to reconnect...');
-  });
-
-  // Lắng nghe sự kiện personalChanged, benefitPlanUpdated, hoặc dataUpdated
-  socket.on('personalChanged', (data) => {
-    console.log('Received personalChanged event:', data);
-    // Gọi lại API lấy dữ liệu mới hoặc trực tiếp cập nhật UI
-    updateDataFromAPI();
-  });
-
-  socket.on('benefitPlanUpdated', (data) => {
-    console.log('Received benefitPlanUpdated event:', data);
-    updateDataFromAPI();
-  });
-
-  socket.on('dataUpdated', (data) => {
-    console.log('Received dataUpdated event:', data);
-    updateDataFromAPI();
-  });
-
-  // Hàm gọi API lấy dữ liệu mới và cập nhật UI
-  async function updateDataFromAPI() {
-    try {
-      const response = await fetch('http://localhost:3000/api/humanList');
-      if (!response.ok) throw new Error('Failed to fetch data');
-      const result = await response.json();
-
-      // Xử lý update UI dựa trên result
-      console.log('Data from API:', result);
-      // Gọi hàm vẽ biểu đồ, cập nhật số liệu, ... (đã có trong total-earning.js)
-      // Ví dụ gọi lại hàm load data và render lại biểu đồ
-    } catch (err) {
-      console.error('Error updating data:', err);
+    // Function to update all dashboard elements with new data
+    function updateDashboardWithData(data) {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        console.warn('No valid data for dashboard update:', data);
+        return;
     }
-  }
+        
+        console.log('Updating dashboard with new data');
+        
+        // Update summary numbers
+        updateSummaryNumbers(data);
+        
+        // Update charts - these functions should be defined in your total-earning.js file
+        if (typeof updateDepartmentChart === 'function') updateDepartmentChart(data);
+        if (typeof updateGenderChart === 'function') updateGenderChart(data);
+        if (typeof updateEmployeeChart === 'function') updateEmployeeChart(data);
+        if (typeof updateShareholderChart === 'function') updateShareholderChart(data);
+        if (typeof updateEthnicityChart === 'function') updateEthnicityChart(data);
+    }
 
-  // Có thể gọi updateDataFromAPI() khi trang load lần đầu để đảm bảo UI có dữ liệu
-  updateDataFromAPI();
+    // Example function to update summary numbers
+    function updateSummaryNumbers(data) {
+        // Calculate total money
+        const totalMoney = data.reduce((sum, item) => sum + (parseFloat(item.Annual_Salary) || 0), 0);
+        document.getElementById('number-money').textContent = totalMoney.toLocaleString('en-US');
+        
+        // Count unique shareholders
+        const shareholders = new Set(data.filter(item => item.Shareholder === 'Y').map(item => item.Employee_Id));
+        document.getElementById('number-shareholder').textContent = shareholders.size;
+        
+        // Count unique departments
+        const departments = new Set(data.map(item => item.Department));
+        document.getElementById('number-department').textContent = departments.size;
+    }
+
+    // Initialize data on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Fetch initial data
+        updateDataFromAPI();
+        
+        // Register for WebSocket events
+        window.socketClient.on('personalChanged', function(data) {
+            console.log('Personal data changed:', data);
+            updateDataFromAPI();
+        });
+        
+        window.socketClient.on('benefitPlanUpdated', function(data) {
+            console.log('Benefit plan updated:', data);
+            updateDataFromAPI();
+        });
+    });
 </script>
-
 </body>
 </html>
