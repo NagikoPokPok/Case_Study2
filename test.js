@@ -204,7 +204,7 @@ function resetFormFields() {
     <td>${human.Employee_Id}</td>
     <td>${human.ShareHolder}</td>
     <td>${human.Gender}</td>
-    <td>${ethnicityDisplay(human.Ethnicity)}</td>
+    <td>${human.Ethnicity}</td>
     <td>${human.Employment_Status}</td>
     <td>${human.Department}</td>
     <td>${human.Paid_To_Date}</td>
