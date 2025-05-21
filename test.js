@@ -99,8 +99,6 @@ async function fetchAndDisplayHumans() {
   tbody.appendChild(row);
 }
 }
-let index=20;
-show()
   
 
 function normalizeGender(value) {
@@ -173,11 +171,25 @@ document.getElementById('employeeForm').addEventListener('submit', function(e) {
 
   if (index >= 0) {
     // Cập nhật
+     const isConfirmed = confirm("Đã có ID trùng, bạn có muốn chỉnh sửa không?");
+  if (isConfirmed) {
+    // Người dùng đồng ý chỉnh sửa, cập nhật dữ liệu
     humans[index] = newData;
+  } else {
+    // Người dùng không đồng ý, reset form các trường về rỗng
+    resetFormFields();
+    return; // dừng không thực hiện tiếp
+  }
+
   } else {
     // Thêm mới
     humans.push(newData);
   }
+
+  // Hàm reset form
+function resetFormFields() {
+  document.getElementById('Employee_Id').value = '';
+}
 
   // Cập nhật bảng
   //show(index+1);
@@ -185,7 +197,7 @@ document.getElementById('employeeForm').addEventListener('submit', function(e) {
   tbody.innerHTML = ''; // Xóa dữ liệu cũ 
 
   const startIndex = Math.max(0, humans.length - 20);
-  for( let i = startIndex; i < humans.length; i++){
+  for( let i = 0; i < 20; i++){
   const human = humans[i];
   const row = document.createElement('tr');
   row.innerHTML = `
@@ -211,8 +223,6 @@ document.getElementById('employeeForm').addEventListener('submit', function(e) {
   document.getElementById('popupForm').style.display = 'none';
 });
 
-
-}
 
 // Gọi hàm khi trang đã tải xong
 window.addEventListener('DOMContentLoaded', fetchAndDisplayHumans);
