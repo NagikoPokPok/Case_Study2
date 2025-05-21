@@ -42,12 +42,26 @@ async function updateEmployee(req, res) {
     }
 
     // await sendMessage('personal_changes_myapp', { Employee_ID: humanData.Employee_Id, Operation: 'Update' , data: humanData});
-    await sendMessage(EXCHANGE_NAME, '', {
-      senderId: SENDER_ID,
-      Employee_ID: humanData.Employee_Id,
-      Operation: 'Update',
-      data: humanData
-    });
+    // await sendMessage(EXCHANGE_NAME, '', {
+    //   senderId: SENDER_ID,
+    //   Employee_ID: humanData.Employee_Id,
+    //   Operation: 'Update',
+    //   data: humanData
+    // });
+    await Promise.all([
+      sendMessage(EXCHANGE_NAME, 'hr.person.update', {
+        senderId: SENDER_ID,
+        Employee_ID: humanData.Employee_Id,
+        Operation: 'Update',
+        data: humanData
+      }),
+      sendMessage(EXCHANGE_NAME, 'payroll.person.update', {
+        senderId: SENDER_ID,
+        Employee_ID: humanData.Employee_Id,
+        Operation: 'Update',
+        data: humanData
+      })
+    ]);
 
     res.json({ success: true, message: 'Cập nhật thành công (chỉ bộ nhớ)' });
   } catch (error) {
@@ -73,12 +87,27 @@ async function addEmployee(req, res) {
     humans.push(humanData);
 
     // Gửi message lên RabbitMQ để các hệ thống khác xử lý
-    await sendMessage(EXCHANGE_NAME, '', {
-      senderId: SENDER_ID,
-      Employee_ID: humanData.Employee_Id,
-      Operation: 'Add',
-      data: humanData
-    });
+    // await sendMessage(EXCHANGE_NAME, '', {
+    //   senderId: SENDER_ID,
+    //   Employee_ID: humanData.Employee_Id,
+    //   Operation: 'Add',
+    //   data: humanData
+    // });
+    await Promise.all([
+      sendMessage(EXCHANGE_NAME, 'hr.person.create', {
+        senderId: SENDER_ID,
+        Employee_ID: humanData.Employee_Id,
+        Operation: 'Add',
+        data: humanData
+      }),
+      sendMessage(EXCHANGE_NAME, 'payroll.person.create', {
+        senderId: SENDER_ID,
+        Employee_ID: humanData.Employee_Id,
+        Operation: 'Add',
+        data: humanData
+      })
+    ]);
+
 
     return res.json({ success: true, message: 'Thêm nhân viên thành công' });
 
@@ -114,11 +143,26 @@ async function deleteEmployee(req, res) {
     }
 
     // Gửi message thông báo xóa cho các hệ thống khác qua RabbitMQ
-    await sendMessage(EXCHANGE_NAME, '', {
-      senderId: SENDER_ID,
-      Employee_ID: empIdNum,
-      Operation: 'Delete'
-    });
+    // await sendMessage(EXCHANGE_NAME, '', {
+    //   senderId: SENDER_ID,
+    //   Employee_ID: empIdNum,
+    //   Operation: 'Delete'
+    // });
+    await Promise.all([
+      sendMessage(EXCHANGE_NAME, 'hr.person.delete', {
+        senderId: SENDER_ID,
+        Employee_ID: empIdNum,
+        Operation: 'Delete'
+        
+      }),
+      sendMessage(EXCHANGE_NAME, 'payroll.person.delete', {
+        senderId: SENDER_ID,
+        Employee_ID: empIdNum,
+        Operation: 'Delete'
+        
+      })
+    ]);
+
 
     return res.json({ success: true, message: 'Xóa nhân viên thành công' });
 

@@ -19,7 +19,7 @@ async function connect() {
 
 async function sendMessage(exchangeName, routingKey, message) {
   const ch = await connect();
-  await ch.assertExchange(exchangeName, 'fanout', { durable: true }); // hoặc 'topic' tùy nhu cầu
+  await ch.assertExchange(exchangeName, 'direct', { durable: true }); // hoặc 'topic' tùy nhu cầu
   ch.publish(exchangeName, routingKey, Buffer.from(JSON.stringify(message)), { persistent: true });
   console.log(`Sent message to exchange "${exchangeName}" with routingKey "${routingKey}":`, message);
 }

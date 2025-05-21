@@ -1,12 +1,21 @@
 const amqp = require('amqplib');
 
-async function startConsumer(exchangeName, queueName, messageHandler, senderId) {
+async function startConsumer(exchangeName, queueName, messageHandler, senderId, routingKey = '') {
   const connection = await amqp.connect(process.env.RABBITMQ_URL || 'amqp://localhost');
   const channel = await connection.createChannel();
 
-  await channel.assertExchange(exchangeName, 'fanout', { durable: true });
+  await channel.assertExchange(exchangeName, 'direct', { durable: true });
   await channel.assertQueue(queueName, { durable: true });
-  await channel.bindQueue(queueName, exchangeName, '');
+
+  // Bind queue với exchange theo routing key
+  await channel.bindQueue('hr-queue', 'personal_changes_exchange', 'hr.person.create');
+  await channel.bindQueue('hr-queue', 'personal_changes_exchange', 'hr.person.update');
+  await channel.bindQueue('hr-queue', 'personal_changes_exchange', 'hr.person.delete');
+  await channel.bindQueue('payroll-queue', 'personal_changes_exchange', 'payroll.person.create');
+  await channel.bindQueue('payroll-queue', 'personal_changes_exchange', 'payroll.person.update');
+  await channel.bindQueue('payroll-queue', 'personal_changes_exchange', 'payroll.person.delete');
+
+  await channel.bindQueue(queueName, exchangeName, routingKey);
   console.log(`Waiting for messages in queue ${queueName} bound to exchange ${exchangeName}...`);
 
   // channel.consume(queueName, async (msg) => {
