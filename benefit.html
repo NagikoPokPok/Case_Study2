@@ -20,6 +20,40 @@
 </head>
 <body>
 
+    <div id="error-container" style="display:none; color:red; margin:10px 0;">
+  <span id="error-message"></span>
+</div>
+
+    <div class="connection-indicator">
+    <span id="connection-status" class="status-disconnected">WebSocket: disconnected</span>
+    </div>
+    <style>
+    .connection-indicator {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        z-index: 1000;
+    }
+    .status-connected {
+        background-color: #4CAF50;
+        color: white;
+    }
+    .status-disconnected {
+        background-color: #f44336;
+        color: white;
+    }
+    .status-error {
+        background-color: #ff9800;
+        color: white;
+    }
+    .status-failed {
+        background-color: #9E9E9E;
+        color: white;
+    }
+    </style>
     <div class="wrapper">
         <div class="container">
             <div class="row">
@@ -155,6 +189,41 @@
           ]
         });
     </script>
+
+    <!-- Add these lines before </body> in benefit.html and vacation-day.html -->
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script src="/src/public/socketConnection.js"></script>
+<script>
+    // Listen for the dataRefreshed event to update charts and stats
+    document.addEventListener('dataRefreshed', function(event) {
+        const data = event.detail;
+        updateDashboardWithData(data);
+    });
+
+    // Example function to update summary numbers and charts
+    function updateDashboardWithData(data) {
+        if (!data || !Array.isArray(data) || data.length === 0) {
+            console.warn('No valid data for dashboard update:', data);
+            return;
+        }
+        // Call your update functions here, e.g.:
+        // updateSummaryNumbers(data);
+        // updateBenefitChart(data); // or updateVacationChart(data)
+    }
+
+    // Initialize data on page load and register for socket events
+    document.addEventListener('DOMContentLoaded', function() {
+        updateDataFromAPI();
+
+        window.socketClient.on('personalChanged', function(data) {
+            updateDataFromAPI();
+        });
+
+        window.socketClient.on('benefitPlanUpdated', function(data) {
+            updateDataFromAPI();
+        });
+    });
+</script>
 
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
