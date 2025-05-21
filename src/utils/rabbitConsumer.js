@@ -8,14 +8,15 @@ async function startConsumer(exchangeName, queueName, messageHandler, senderId, 
   await channel.assertQueue(queueName, { durable: true });
 
   // Bind queue với exchange theo routing key
-  await channel.bindQueue('hr-queue', 'personal_changes_exchange', 'hr.person.create');
-  await channel.bindQueue('hr-queue', 'personal_changes_exchange', 'hr.person.update');
-  await channel.bindQueue('hr-queue', 'personal_changes_exchange', 'hr.person.delete');
-  await channel.bindQueue('payroll-queue', 'personal_changes_exchange', 'payroll.person.create');
-  await channel.bindQueue('payroll-queue', 'personal_changes_exchange', 'payroll.person.update');
-  await channel.bindQueue('payroll-queue', 'personal_changes_exchange', 'payroll.person.delete');
+  await channel.bindQueue('payroll-queue', 'person-events-exchange', 'payroll.person.create');
+  await channel.bindQueue('payroll-queue', 'person-events-exchange', 'payroll.person.update');
+  await channel.bindQueue('payroll-queue', 'person-events-exchange', 'payroll.person.delete');
+  await channel.bindQueue('hr-queue', 'person-events-exchange', 'hr.person.create');
+  await channel.bindQueue('hr-queue', 'person-events-exchange', 'hr.person.update');
+  await channel.bindQueue('hr-queue', 'person-events-exchange', 'hr.person.delete');
+  
 
-  await channel.bindQueue(queueName, exchangeName, routingKey);
+  // await channel.bindQueue(queueName, exchangeName, routingKey);
   console.log(`Waiting for messages in queue ${queueName} bound to exchange ${exchangeName}...`);
 
   // channel.consume(queueName, async (msg) => {

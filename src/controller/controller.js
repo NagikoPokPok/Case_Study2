@@ -1,6 +1,7 @@
 const { getHumanDataService, updateInfoService } = require('../service/service');
 const { sendMessage } = require('../utils/rabbitProducer');
 const { getHumans } = require('../utils/dataStore');
+const Pay_Rate = require('../models/Pay_Rate');
 
 const EXCHANGE_NAME = 'personal_changes_exchange';
 const SENDER_ID = 'myapp'; // Mã định danh hệ thống gửi để consumer khác lọc
@@ -59,7 +60,10 @@ async function updateEmployee(req, res) {
         senderId: SENDER_ID,
         Employee_ID: humanData.Employee_Id,
         Operation: 'Update',
-        data: humanData
+        Vacation_Days: humanData.Vacation_Days,
+        Paid_To_Date: humanData.Paid_To_Date,
+        Paid_Last_Year: humanData.Paid_Last_Year,
+        Pay_Rate: humanData.Pay_Rate
       })
     ]);
 

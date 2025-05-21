@@ -240,7 +240,7 @@ async function startRabbitConsumer() {
   try {
     await startConsumer(
       'personal_changes_exchange',       // Tên Exchange
-      'personal_changes_myapp_queue',    // Queue riêng của hệ thống bạn
+      'dashboard-queue',    // Queue riêng của hệ thống bạn
       handlePersonalChangeMessage,       // Hàm xử lý message nhận được
       'myapp'                           // senderId, để hệ thống bạn bỏ qua message do chính nó gửi
     );
