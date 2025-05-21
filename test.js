@@ -1,5 +1,10 @@
 
 let humans = [];
+let currentPage = 1;
+let pageSize = 20;
+let lastId = 0;
+let hasMore = true;
+let lastIdsStack = [0]; 
 
 // Mở popup
 document.getElementById('btnOpenPopup').addEventListener('click', function(e) {
@@ -12,104 +17,144 @@ document.getElementById('btnClosePopup').addEventListener('click', function() {
   document.getElementById('popupForm').style.display = 'none';
 });
 
-// // Xử lý submit form (hiện chỉ preventDefault)
-// document.getElementById('employeeForm').addEventListener('submit', function(e) {
-//   e.preventDefault();
-//   //add du lieu ơ day
-  
-//   // Đóng popup sau submit
-//   document.getElementById('popupForm').style.display = 'none';
-// });
-
-
-
 async function fetchHumanData() {
-   let allData = [];
-    let lastId = 0;
-    let hasMore = true;
-
-    // while (hasMore) {
-        
-    // }
     try {
-        const response = await fetch(`http://localhost:3000/api/humanList`);
+        console.log('Attempting to fetch data from server...');
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000);
+        
+        const response = await fetch('http://localhost:3000/api/humanList', {
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            console.error(`Server responded with status: ${response.status}`);
+            document.getElementById('error-message').textContent = 
+                `Server unavailable (${response.status}). Please try again later.`;
+            document.getElementById('error-container').style.display = 'block';
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
         const result = await response.json();
-        allData = (result);
-        
-        if (result.data && result.data.length > 0) {
-            allData = allData.concat(result.data);
-            lastId = result.nextLastId;
-            hasMore = result.hasMore;
-        } else {
-            hasMore = false;
-        }
+        return result;
+
     } catch (error) {
         console.error('Error fetching data:', error);
-        // break;
+        return [];
     }
-    return allData;
 }
 
-function getFormData() {
-  return {
-    Employee_Id: document.getElementById('Employee_Id').value.trim(),
-    ShareHolder: document.getElementById('ShareHolder').value.trim(),
-    Gender: document.getElementById('Gender').value,
-    Ethnicity: document.getElementById('Ethnicity').value.trim(),
-    Employment_Status: document.getElementById('Employment_Status').value.trim(),
-    Department: document.getElementById('Department').value.trim(),
-    Paid_To_Date: parseFloat(document.getElementById('Paid_To_Date').value) || 0,
-    Paid_Last_Year: parseFloat(document.getElementById('Paid_Last_Year').value) || 0,
-    Vacation_Days: parseInt(document.getElementById('Vacation_Days').value) || 0,
-    Benefit_Plan: document.getElementById('Benefit_Plan').value.trim(),
-    Average_Plan_Benefit: parseFloat(document.getElementById('Average_Plan_Benefit').value) || 0,
-    Pay_Amount: parseFloat(document.getElementById('Pay_Amount').value) || 0,
-    Tax_Percentage: parseFloat(document.getElementById('Tax_Percentage').value) || 0
-  };
+// New function to handle pagination
+function paginateData(data, page, pageSize) {
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    return {
+        data: data.slice(start, end),
+        hasMore: end < data.length,
+        totalPages: Math.ceil(data.length / pageSize)
+    };
 }
 
 async function fetchAndDisplayHumans() {
-  humans = await fetchHumanData();;
-
-
-  const tbody = document.querySelector('tbody');
-  tbody.innerHTML = ''; // Xóa dữ liệu cũ
-  console.log('humans', humans[0]);
-
-  for(let i=0; i<20; i++){
-  const human = humans[i];
-  const row = document.createElement('tr');
-  row.innerHTML = `
-    <td>${human.Employee_Id}</td>
-    <td>${human.ShareHolder}</td>
-    <td>${human.Gender}</td>
-    <td>${human.Ethnicity}</td>
-    <td>${human.Employment_Status}</td>
-    <td>${human.Department}</td>
-    <td>${human.Paid_To_Date}</td>
-    <td>${human.Paid_Last_Year}</td>
-    <td>${human.Vacation_Days}</td>
-    <td>${human.Benefit_Plan}</td>
-    <td>${human.Average_Plan_Benefit}</td>
-    <td>${human.Pay_Amount}</td>
-    <td>${human.Tax_Percentage}</td>
-    <td><a href="#" class="edit-btn" data-id="${human.Employee_Id}">edit</a></td>
-  `;
-  tbody.appendChild(row);
+    // If we haven't loaded the data yet, load it
+    if (humans.length === 0) {
+        const allData = await fetchHumanData();
+        humans = allData; // Store all data
+    }
+    
+    // Get current page of data
+    const paginatedResult = paginateData(humans, currentPage, pageSize);
+    
+    // Update hasMore flag
+    hasMore = paginatedResult.hasMore;
+    
+    // Update the table with current page
+    updateTable(paginatedResult.data);
+    updatePaginationControls(paginatedResult.totalPages);
 }
+
+function updateTable(data) {
+    const tbody = document.querySelector('tbody');
+    tbody.innerHTML = '';
+    data.forEach(human => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${human.Employee_Id || ''}</td>
+            <td>${human.ShareHolder || ''}</td>
+            <td>${normalizeGender(human.Gender) || ''}</td>
+            <td>${human.Ethnicity || ''}</td>
+            <td>${human.Employment_Status || ''}</td>
+            <td>${human.Department || ''}</td>
+            <td>${human.Paid_To_Date || 0}</td>
+            <td>${human.Paid_Last_Year || 0}</td>
+            <td>${human.Vacation_Days || 0}</td>
+            <td>${human.Benefit_Plan || ''}</td>
+            <td>${human.Average_Plan_Benefit || 0}</td>
+            <td>${human.Pay_Amount || 0}</td>
+            <td>${human.Tax_Percentage || 0}</td>
+            <td><a href="#" class="edit-btn" data-id="${human.Employee_Id}">edit</a></td>
+        `;
+        tbody.appendChild(row);
+    });
 }
-  
+
+function updatePaginationControls(totalPages) {
+    const prevButton = document.getElementById('prevPage');
+    const nextButton = document.getElementById('nextPage');
+    const pageInfo = document.getElementById('pageInfo');
+    
+    if (prevButton) prevButton.disabled = currentPage === 1;
+    if (nextButton) nextButton.disabled = currentPage >= totalPages;
+    if (pageInfo) pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+}
+
+// Update click handlers for pagination
+document.getElementById('nextPage').addEventListener('click', async function() {
+    if (hasMore) {
+        currentPage++;
+        await fetchAndDisplayHumans();
+    }
+});
+
+document.getElementById('prevPage').addEventListener('click', async function() {
+    if (currentPage > 1) {
+        currentPage--;
+        await fetchAndDisplayHumans();
+    }
+});
+
+// Initial load
+window.addEventListener('DOMContentLoaded', async () => {
+    await fetchAndDisplayHumans();
+});
 
 function normalizeGender(value) {
-  if (!value) return '';
   const v = value;
-  if (v === 'Male' ) return 'Male';
-  if (v === 'Female') return 'Female';
-  if (v === 'Other' ) return 'Other';
-  return '';
+  if (v == '1' ) return 'Male';
+  else if (v == '0') return 'Female';
 }
 
+// Add this function before your form submit handler
+function getFormData() {
+    return {
+        Employee_Id: document.getElementById('Employee_Id').value.trim(),
+        ShareHolder: document.getElementById('ShareHolder').value.trim(),
+        Gender: document.getElementById('Gender').value,
+        Ethnicity: document.getElementById('Ethnicity').value.trim(),
+        Employment_Status: document.getElementById('Employment_Status').value.trim(),
+        Department: document.getElementById('Department').value.trim(),
+        Paid_To_Date: parseFloat(document.getElementById('Paid_To_Date').value) || 0,
+        Paid_Last_Year: parseFloat(document.getElementById('Paid_Last_Year').value) || 0,
+        Vacation_Days: parseInt(document.getElementById('Vacation_Days').value) || 0,
+        Benefit_Plan: document.getElementById('Benefit_Plan').value.trim(),
+        Average_Plan_Benefit: parseFloat(document.getElementById('Average_Plan_Benefit').value) || 0,
+        Pay_Amount: parseFloat(document.getElementById('Pay_Amount').value) || 0,
+        Tax_Percentage: parseFloat(document.getElementById('Tax_Percentage').value) || 0
+    };
+}
 
 // Hàm fill dữ liệu vào form
 function fillForm(human) {
@@ -149,81 +194,74 @@ document.addEventListener('click', function(e) {
 document.getElementById('btnOpenPopup').addEventListener('click', function(e) {
   e.preventDefault();
   document.getElementById('popupForm').style.display = 'flex';
-
-  // Tính max ID
-  let maxId = humans.length;
-  const newId = maxId + 1;
-
-  // Reset form rồi gán ID mới
   const form = document.getElementById('employeeForm');
   form.reset();
-  document.getElementById('Employee_Id').value = newId;
 });
 
-// Xử lý submit form (lưu dữ liệu)
-document.getElementById('employeeForm').addEventListener('submit', function(e) {
-  e.preventDefault();
+// Modify the form submit handler
+document.getElementById('employeeForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const newData = getFormData();
 
-  const newData = getFormData();
+    try {
+        // Find if employee with this ID already exists
+        const index = humans.findIndex(h => h.Employee_Id === newData.Employee_Id);
 
-  //Tìm xem có nhân viên đó chưa
-  const index = humans.findIndex(h => h.Employee_Id === newData.Employee_Id);
+        if (index >= 0) {
+            // Update existing employee
+            const isConfirmed = confirm("Đã có ID trùng, bạn có muốn chỉnh sửa không?");
+            if (isConfirmed) {
+                // Call API to update databases
+                await fetch(`http://localhost:3000/api/humanList/${newData.Employee_Id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newData)
+                });
+                humans[index] = newData;
+            } else {
+                resetFormFields();
+                return;
+            }
+        } else {
+            // Add new employee
+            await fetch('http://localhost:3000/api/humanList', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newData)
+            });
+            humans.push(newData);
+        }
 
-  if (index >= 0) {
-    // Cập nhật
-     const isConfirmed = confirm("Đã có ID trùng, bạn có muốn chỉnh sửa không?");
-  if (isConfirmed) {
-    // Người dùng đồng ý chỉnh sửa, cập nhật dữ liệu
-    humans[index] = newData;
-  } else {
-    // Người dùng không đồng ý, reset form các trường về rỗng
-    resetFormFields();
-    return; // dừng không thực hiện tiếp
-  }
+        // Close popup and refresh data
+        document.getElementById('popupForm').style.display = 'none';
+        await fetchAndDisplayHumans(); // This will get fresh data from server
 
-  } else {
-    // Thêm mới
-    humans.push(newData);
-  }
-
-  // Hàm reset form
-function resetFormFields() {
-  document.getElementById('Employee_Id').value = '';
-}
-
-  // Cập nhật bảng
-  //show(index+1);
-  const tbody = document.querySelector('tbody');
-  tbody.innerHTML = ''; // Xóa dữ liệu cũ 
-
-  const startIndex = Math.max(0, humans.length - 20);
-  for( let i = 0; i < 20; i++){
-  const human = humans[i];
-  const row = document.createElement('tr');
-  row.innerHTML = `
-    <td>${human.Employee_Id}</td>
-    <td>${human.ShareHolder}</td>
-    <td>${human.Gender}</td>
-    <td>${human.Ethnicity}</td>
-    <td>${human.Employment_Status}</td>
-    <td>${human.Department}</td>
-    <td>${human.Paid_To_Date}</td>
-    <td>${human.Paid_Last_Year}</td>
-    <td>${human.Vacation_Days}</td>
-    <td>${human.Benefit_Plan}</td>
-    <td>${human.Average_Plan_Benefit}</td>
-    <td>${human.Pay_Amount}</td>
-    <td>${human.Tax_Percentage}</td>
-    <td><a href="#" class="edit-btn" data-id="${human.Employee_Id}">edit</a></td>
-  `;
-  tbody.appendChild(row);
-  }
-
-  // Đóng popup
-  document.getElementById('popupForm').style.display = 'none';
+    } catch (error) {
+        console.error('Error updating data:', error);
+        alert('Failed to save changes. Please try again.');
+    }
 });
 
+document.getElementById('nextPage').addEventListener('click', async function() {
+    if (hasMore) {
+        lastIdsStack.push(lastId);
+        lastId = humans.length > 0 ? humans[humans.length - 1].Employee_Id : lastId;
+        currentPage++;
+        await fetchAndDisplayHumans();
+    }
+});
 
-// Gọi hàm khi trang đã tải xong
-window.addEventListener('DOMContentLoaded', fetchAndDisplayHumans);
+document.getElementById('prevPage').addEventListener('click', async function() {
+    if (currentPage > 1) {
+        lastIdsStack.pop(); // Remove current lastId
+        lastId = lastIdsStack[lastIdsStack.length - 1] || 0;
+        currentPage--;
+        await fetchAndDisplayHumans();
+    }
+});
+
+// Initial load
+window.addEventListener('DOMContentLoaded', async () => {
+    await fetchAndDisplayHumans();
+});
 
