@@ -32,14 +32,12 @@ async function updateEmployee(req, res) {
   try {
     const humanData = req.body;
 
-    // const idx = Humans.findIndex(h => h.Employee_Id === humanData.Employee_Id);
-    // if (idx >= 0) {
-    //   Humans[idx] = { ...Humans[idx], ...humanData };
-    // } else {
-    //   Humans.push(humanData);
-    // }
-
-    // console.log('humanData:', humanData);
+    const idx = Humans.findIndex(h => h.Employee_Id === humanData.Employee_Id);
+    if (idx >= 0) {
+      Humans[idx] = { ...Humans[idx], ...humanData };
+    } else {
+      Humans.push(humanData);
+    }
 
     await sendMessage('personal_changes', { Employee_ID: humanData.Employee_Id, Operation: 'Update' , data: humanData});
 
