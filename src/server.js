@@ -15,16 +15,17 @@ const path = require('path');
 
 //route
 const route = require('./route/route');
+const { setHumans, getHumans } = require('./utils/dataStore');
 
 //Human merge
-let Humans = [];
+// let Humans = [];
 let lastSuccessfulUpdate = null;
 let isDataRefreshInProgress = false; // Flag to prevent concurrent refresh operations
 let dataRefreshNeeded = false; // Flag to indicate if data refresh is needed
 
-function getHumans() {
-  return Humans;
-}
+// async function getHumans() {
+//   return Humans;
+// }
 
 const app = express();
 app.use(cors());
@@ -51,9 +52,9 @@ app.use('/api/status', async (req, res) => {
 
 // API to return human data
 app.get('/api/humanList', (req, res) => {
-  console.log('Received request for human data: ', Humans.length);
-  if (Humans && Array.isArray(Humans) && Humans.length > 0) {
-    res.json(Humans);
+  console.log('Received request for human data: ', getHumans().length);
+  if (getHumans() && Array.isArray(getHumans()) && getHumans().length > 0) {
+    res.json(getHumans());
   } else {
     res.status(503).json({ 
       error: 'Data unavailable', 
@@ -96,8 +97,7 @@ async function calculateOnServerStart() {
       console.log(`📦 Batch ${batchCount}: Đã tải thêm ${dataBatch.length} bản ghi (Tổng: ${allHumans.length})`);
     }
 
-    Humans = allHumans;
-
+    setHumans(allHumans);
     // Delete old data from Redis cache
     const keys = [];
     for await (const key of redisClient.scanIterator({ MATCH: 'humanData:*' })) {
@@ -110,7 +110,7 @@ async function calculateOnServerStart() {
       console.log(`Deleted Redis cache key: ${key}`);
     }
 
-    console.log(`🏁 Tổng cộng ${Humans.length} bản ghi đã được load vào bộ nhớ`);
+    console.log(`🏁 Tổng cộng ${getHumans().length} bản ghi đã được load vào bộ nhớ`);
 
     // PHÁT SỰ KIỆN WEBSOCKET CHO CLIENT
     if (typeof io !== 'undefined') {
@@ -118,7 +118,7 @@ async function calculateOnServerStart() {
       console.log('WebSocket event personalChanged emitted');
     }
 
-    console.log(`🏁 Tổng cộng ${Humans.length} bản ghi đã được load vào bộ nhớ`);
+    console.log(`🏁 Tổng cộng ${getHumans().length} bản ghi đã được load vào bộ nhớ`);
 
   } catch (err) {
     console.error('🚨 Lỗi khi tải dữ liệu Human:', err);
@@ -126,37 +126,76 @@ async function calculateOnServerStart() {
 }
 
 async function handlePersonalChangeMessage(message) {
-  console.log('Received message from personal_changes queue:', message);
-  
-  if (isDataRefreshInProgress) {
-    console.log('Data refresh already in progress, flagging for another refresh');
-    dataRefreshNeeded = true;
-    return;
-  }
+  console.log('Received message:', message);
 
   try {
-    isDataRefreshInProgress = true;
-    console.log('Starting data refresh due to database changes...');    // Clear existing Redis cache
-    const keys = [];
-    for await (const key of redisClient.scanIterator({ MATCH: 'humanData:*' })) {
-      if (key) {  // Only add non-empty keys
-        keys.push(key);
-      }
-    }
-    console.log(`Found ${keys.length} Redis keys to delete`);
-    for (const key of keys) {
-      if (key) {  // Double-check the key is not empty
-        await redisClient.del(key);
-      }
+    const humans = getHumans();
+    const empId = message.Employee_ID;
+    const operation = message.Operation;
+    const data = message.data;
+
+    if (!empId && operation !== 'Delete') {
+      console.warn('Message thiếu Employee_ID hoặc data, bỏ qua');
+      return;
     }
 
-    // Reload data from databases
-    await calculateOnServerStart();
-    
-    lastSuccessfulUpdate = new Date().toISOString();
-    console.log('Data refresh completed successfully');
+    switch (operation) {
+      case 'Add':
+        {
+          // Kiểm tra đã tồn tại chưa
+          const exists = humans.some(h => h.Employee_Id === empId);
+          if (!exists) {
+            humans.push(data);
+            console.log(`Added new employee with ID ${empId}`);
+          } else {
+            console.log(`Employee ID ${empId} đã tồn tại, không thêm`);
+          }
+        }
+        break;
+
+      case 'Update':
+        {
+          const idx = humans.findIndex(h => h.Employee_Id === empId);
+          if (idx >= 0) {
+            humans[idx] = { ...humans[idx], ...data };
+            console.log(`Updated employee with ID ${empId}`);
+          } else {
+            // Nếu chưa có thì thêm mới
+            humans.push(data);
+            console.log(`Added new employee with ID ${empId} vì không tìm thấy khi update`);
+          }
+        }
+        break;
+
+      case 'Delete':
+        {
+          const idx = humans.findIndex(h => h.Employee_Id === empId);
+          if (idx >= 0) {
+            humans.splice(idx, 1);
+            console.log(`Deleted employee with ID ${empId}`);
+          } else {
+            console.log(`Employee ID ${empId} không tồn tại để xóa`);
+          }
+        }
+        break;
+
+      default:
+        console.warn(`Operation không hợp lệ: ${operation}`);
+        return;
+    }
+
+    // Phát sự kiện websocket để frontend cập nhật
+    if (typeof io !== 'undefined') {
+      io.emit('personalChanged', {
+        message: `${operation} employee ${empId}`,
+        employeeId: empId,
+        operation,
+        employee: data || null
+      });
+      console.log('WebSocket event personalChanged emitted');
+    }
   } catch (err) {
-    console.error('Failed to refresh data:', err);
+    console.error('Error handling personal change message:', err);
   } finally {
     isDataRefreshInProgress = false;
     
@@ -194,31 +233,6 @@ try {
   console.error('RabbitMQ consumer failed to start:', err);
   // Continue app execution even if RabbitMQ fails
 }
-
-// // Listen for RabbitMQ messages
-// onQueueUpdated('benefit_plan_changes', async (message) => {
-//   console.log('Emitting to WebSocket from benefit_plan_changes:', message);
-//   io.emit('benefitPlanUpdated', { message });
-
-//   // Flag check refresh needed
-//   dataRefreshNeeded = true;
-  
-//   if (!isDataRefreshInProgress) {
-//     await calculateOnServerStart();
-//   }
-// });
-
-// onQueueUpdated('personal_changes', async (message) => {
-//   console.log('Emitting to WebSocket from personal_changes:', message);
-//   io.emit('personalChanged', { message });
-
-//   // Flag check refresh needed
-//   dataRefreshNeeded = true;
-  
-//   if (!isDataRefreshInProgress) {
-//     await calculateOnServerStart();
-//   }
-// });
 
 // Phục vụ trang HTML (frontend)
 app.get('/', (req, res) => {
@@ -280,5 +294,3 @@ async function startApp() {
 startApp().catch(err => {
   console.error('Fatal application error:', err);
 });
-
-module.exports = { getHumans };
