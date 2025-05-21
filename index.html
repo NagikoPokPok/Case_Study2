@@ -18,9 +18,49 @@
 
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
 </head>
 <body>
+<div id="error-container" style="display:none; color:red; margin:10px 0;">
+  <span id="error-message"></span>
+</div>
+
+    <div class="connection-indicator">
+    <span id="connection-status" class="status-disconnected">WebSocket: disconnected</span>
+    </div>
+    <style>
+    .connection-indicator {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        z-index: 1000;
+    }
+    .status-connected {
+        background-color: #4CAF50;
+        color: white;
+    }
+    .status-disconnected {
+        background-color: #f44336;
+        color: white;
+    }
+    .status-error {
+        background-color: #ff9800;
+        color: white;
+    }
+    .status-failed {
+        background-color: #9E9E9E;
+        color: white;
+    }
+    </style>
+
+    <div style="margin-bottom: 20px;">
+    <button class="btn btn-primary" onclick="window.open('test.html', '_blank')">
+        Go to Employee Table
+    </button>
+</div>
 
     <div class="wrapper">
         <div class="container">
@@ -44,6 +84,7 @@
                                     </li>
                                     <li><a href="vacation-day.html"><i class="icon-inbox"></i>Vacation days </a></li>
                                     <li><a href="benefit.html"><i class="icon-tasks"></i>Average benefit </a></li>
+                                    <li><a href="test.html"><i class="icon-tasks"></i>Employee List </a></li>
                                 </ul>
                             </li>
                             <li><a href="#"><i class="menu-icon icon-signout"></i>Logout </a></li>
@@ -249,54 +290,69 @@
 
     <script type="module" src="/src/public/total-earning.js"></script>
 
-    <script>
-        let socket;
-        const messageHistoryKey = 'messageHistory'; // Key lưu trữ thông báo trong localStorage
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="/src/public/socketConnection.js"></script>
 
-        // Lấy thông báo đã lưu trong localStorage
-        let messageHistory = JSON.parse(localStorage.getItem(messageHistoryKey)) || []; 
+<!-- Data refresh script that integrates with the charts -->
+<script>
+    // Listen for the dataRefreshed event to update charts
+    document.addEventListener('dataRefreshed', function(event) {
+        const data = event.detail;
+        // Update all charts and statistics
+        updateDashboardWithData(data);
+    });
 
-        // Hàm hiển thị thông báo
-        function displayMessages() {
-            console.log('Displaying messages:', messageHistory);
-        }
+    // Function to update all dashboard elements with new data
+    function updateDashboardWithData(data) {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        console.warn('No valid data for dashboard update:', data);
+        return; 
+    }
+        
+        console.log('Updating dashboard with new data');
+        
+        // Update summary numbers
+        updateSummaryNumbers(data);
+        
+        // Update charts - these functions should be defined in your total-earning.js file
+        if (typeof updateDepartmentChart === 'function') updateDepartmentChart(data);
+        if (typeof updateGenderChart === 'function') updateGenderChart(data);
+        if (typeof updateEmployeeChart === 'function') updateEmployeeChart(data);
+        if (typeof updateShareholderChart === 'function') updateShareholderChart(data);
+        if (typeof updateEthnicityChart === 'function') updateEthnicityChart(data);
+    }
 
-        // Hàm khởi tạo WebSocket và kết nối lại nếu bị mất
-        function initSocket() {
-            socket = io('http://localhost:3000'); // Kết nối đến WebSocket server
+    // Example function to update summary numbers
+    function updateSummaryNumbers(data) {
+        // Calculate total money
+        const totalMoney = data.reduce((sum, item) => sum + (parseFloat(item.Annual_Salary) || 0), 0);
+        document.getElementById('number-money').textContent = totalMoney.toLocaleString('en-US');
+        
+        // Count unique shareholders
+        const shareholders = new Set(data.filter(item => item.Shareholder === 'Y').map(item => item.Employee_Id));
+        document.getElementById('number-shareholder').textContent = shareholders.size;
+        
+        // Count unique departments
+        const departments = new Set(data.map(item => item.Department));
+        document.getElementById('number-department').textContent = departments.size;
+    }
 
-            socket.on('benefitPlanUpdated', (data) => {
-                console.log('Received from WebSocket:', data.message);
-                // Lưu thông điệp mới vào history và hiển thị tất cả thông điệp đã nhận
-                messageHistory.push('Benefit Plan: ' + data.message);
-                localStorage.setItem(messageHistoryKey, JSON.stringify(messageHistory)); // Lưu vào localStorage
-                displayMessages();
-            });
-
-            socket.on('personalChanged', (data) => {
-                console.log('Received from WebSocket:', data.message);
-                // Lưu thông điệp mới vào history và hiển thị tất cả thông điệp đã nhận
-                messageHistory.push('Personal Data: ' + data.message);
-                localStorage.setItem(messageHistoryKey, JSON.stringify(messageHistory)); // Lưu vào localStorage
-                displayMessages();
-            });
-
-            socket.on('connect', () => {
-                console.log('WebSocket connected');
-            });
-
-            socket.on('disconnect', () => {
-                console.log('WebSocket disconnected. Reconnecting...');
-                setTimeout(initSocket, 2000);  // Tái kết nối sau 2 giây nếu mất kết nối
-            });
-        }
-
-        // Khởi động kết nối WebSocket ngay khi trang được tải
-        initSocket();
-
-        // Hiển thị thông điệp đã lưu khi tải lại trang
-        displayMessages();
-    </script>
-
+    // Initialize data on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Fetch initial data
+        updateDataFromAPI();
+        
+        // Register for WebSocket events
+        window.socketClient.on('personalChanged', function(data) {
+            console.log('Personal data changed:', data);
+            updateDataFromAPI();
+        });
+        
+        window.socketClient.on('benefitPlanUpdated', function(data) {
+            console.log('Benefit plan updated:', data);
+            updateDataFromAPI();
+        });
+    });
+</script>
 </body>
 </html>

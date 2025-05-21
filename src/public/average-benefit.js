@@ -1,38 +1,59 @@
 import { renderBenefitBarChart } from '/Charts/benefitBarChart.js';
-import { formatNumber } from './format_number.js';
-import { barChartOptions } from './chart_options.js';
-// import { dataService } from '../services/data_service.js';
+import { barChartOptions, compactUSD } from './chart_options.js';
 
 async function fetchHumanData() {
-    let allData = [];
-    let lastId = 0;
-    let hasMore = true;
-
-    // while (hasMore) {
-        
-    // }
     try {
-        const response = await fetch(`http://localhost:3000/api/humanList`);
-        
-        const result = await response.json();
-        
-        if (result.data && result.data.length > 0) {
-            allData = allData.concat(result.data);
-            lastId = result.nextLastId;
-            hasMore = result.hasMore;
-        } else {
-            hasMore = false;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // timeout 10s
+
+        const response = await fetch(`http://localhost:3000/api/humanList`, {
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            console.error(`Server responded with status: ${response.status}`);
+            document.getElementById('error-message').textContent = `Server unavailable (${response.status}). Please try again later.`;
+            document.getElementById('error-container').style.display = 'block';
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+
+        const result = await response.json();
+
+        if (result.error) {
+            console.error('Server error:', result.message);
+            document.getElementById('error-message').textContent = `Error: ${result.message}`;
+            document.getElementById('error-container').style.display = 'block';
+            return [];
+        }
+
+        let validData = [];
+
+        if (result.data && Array.isArray(result.data)) {
+            validData = result.data;
+        } else if (Array.isArray(result)) {
+            validData = result;
+        } else {
+            console.warn('No valid data received:', result);
+            document.getElementById('error-message').textContent = 'Invalid data format received from server.';
+            document.getElementById('error-container').style.display = 'block';
+            return [];
+        }
+
+        return validData;
     } catch (error) {
         console.error('Error fetching data:', error);
-        // break;
+        document.getElementById('error-message').textContent = `Connection error: ${error.message}`;
+        document.getElementById('error-container').style.display = 'block';
+        return [];
     }
-    return allData;
 }
 
 document.addEventListener("DOMContentLoaded", async function () {
     try {
         const data = await fetchHumanData();
+
+        if (!data.length) return;
 
         const shareholders = data.filter(human => human.ShareHolder).length;
         const departments = [...new Set(data.map(human => human.Department))];
@@ -48,7 +69,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     
 
     // Update summary numbers
-    document.getElementById("number-money").textContent = formatNumber(totalAverageBenefit);
+    document.getElementById("number-money").textContent = compactUSD.format(totalAverageBenefit);
     document.getElementById("number-shareholder").textContent = shareholders;
     document.getElementById("number-department").textContent = departments.length;
 
@@ -67,7 +88,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         .slice(0, 10);
 
     // Update total average benefit
-    document.getElementById("total-average-benefit").textContent = formatNumber(totalAverageBenefit);
+    document.getElementById("total-average-benefit").textContent = compactUSD.format(totalAverageBenefit);
 
     // Process shareholder data
     const shareholderData = {
