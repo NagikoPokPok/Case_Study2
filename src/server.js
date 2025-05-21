@@ -10,6 +10,7 @@ const { startConsumer } = require('./utils/rabbitConsumer'); // RabbitMQ consume
 
 const http = require('http');
 const { Server } = require('socket.io');
+const socketManager = require('./websocket/socketManager'); // Socket.io manager
 const path = require('path');
 // const { startRabbitConsumer, onQueueUpdated } = require('../rabbitReceiver'); // Import consumer
 
@@ -219,12 +220,7 @@ async function startRabbitConsumer() {
 
 // Tạo server HTTP và kết nối với Socket.io
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  }
-});
+const io = socketManager.initialize(server).io;
 
 // Start RabbitMQ consumer (if available)
 try {
@@ -237,6 +233,36 @@ try {
 // Phục vụ trang HTML (frontend)
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.post('/api/triggerRefresh', async (req, res) => {
+  try {
+    // Check if a refresh is already in progress
+    if (isDataRefreshInProgress) {
+      return res.status(429).json({ message: 'A data refresh is already in progress' });
+    }
+    
+    // Trigger a data refresh with a dummy message
+    await handlePersonalChangeMessage({ source: 'manual', trigger: 'api' });
+    
+    // Return success
+    res.json({ message: 'Data refresh triggered successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to trigger refresh', message: err.message });
+  }
+});
+
+// Add API endpoint to get WebSocket connection status
+app.get('/api/socket/status', (req, res) => {
+  try {
+    const socketManagerInstance = socketManager.getInstance();
+    res.json({
+      connections: socketManagerInstance.getConnectionCount(),
+      status: 'active'
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get socket status', message: err.message });
+  }
 });
 
 
