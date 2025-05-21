@@ -110,7 +110,6 @@ async function fetchHumanData() {
 document.addEventListener("DOMContentLoaded", async function () {
     const data = await fetchHumanData();
 
-    console.log('Data:', data);
     // Get DOM elements
     const numberMoney = document.getElementById("number-money");
     const numberShareholder = document.getElementById("number-shareholder");

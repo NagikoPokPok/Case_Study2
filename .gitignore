@@ -15,7 +15,3 @@ Thumbs.db
 #src/config/config.json
 
 #src/database/sequelizeConnection.js
-*.json
-src/database/sqlServerConnection.js
-src/database/sequelizeConnection.js
-src/config/config.json

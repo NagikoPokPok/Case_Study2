@@ -6,8 +6,8 @@ const EXCHANGE_NAME = 'personal_changes_exchange';
 const SENDER_ID = 'myapp'; // Mã định danh hệ thống gửi để consumer khác lọc
 
 async function getHumanData(req, res) {
-  const limit = req?.query?.limit || 50000;
-  const lastId = req?.query?.lastId || 0;
+  const limit = parseInt(req.query.limit) || 50000;  // Số dòng mỗi trang
+  const lastId = parseInt(req.query.lastId) || 0;
 
   try {
     const humans = await getHumanDataService(limit, lastId);

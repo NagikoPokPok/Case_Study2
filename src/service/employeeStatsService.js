@@ -24,14 +24,14 @@ function calculateTotalDepartments(humans) {
   // Hàm tính tổng gender
   function calculateTotalGender(humans) {
     const totalGender = { male: 0, female: 0 };
-    
+    // console.log(humans);
     humans.forEach(human => {
-     
+      // console.log(human.Gender);
       
       if (human.Gender === true) totalGender.male += human.Total_Earning;
       if (human.Gender === false) totalGender.female += human.Total_Earning;
     });
-    
+    // console.log(totalGender.male);
     return totalGender;
   }
   
