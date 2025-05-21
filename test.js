@@ -73,33 +73,18 @@ async function fetchAndDisplayHumans() {
   humans = await fetchHumanData();;
 
 
-  const ethnicityDisplay = (val) => {
-  if (!val) return 'unknown';
-  const v = val.toLowerCase();
-  switch(v) {
-    case 'white': return 'White';
-    case 'asian': return 'Asian';
-    case 'Hispanic': return 'Hispanic';
-    case 'Black': return 'Black';
-    // các case khác...
-    default: return 'Other';
-  }
-}
+  const tbody = document.querySelector('tbody');
+  tbody.innerHTML = ''; // Xóa dữ liệu cũ
+  console.log('humans', humans[0]);
 
-// Trong tạo bảng:
-
-
-function show(){
-   const tbody = document.querySelector('tbody');
-  tbody.innerHTML = ''; // Xóa dữ liệu cũ 
-  for( let i=humans.length-1; i > humans.length-20; i--){
+  for(let i=0; i<20; i++){
   const human = humans[i];
   const row = document.createElement('tr');
   row.innerHTML = `
     <td>${human.Employee_Id}</td>
     <td>${human.ShareHolder}</td>
     <td>${human.Gender}</td>
-    <td>${ethnicityDisplay(human.Ethnicity)}</td>
+    <td>${human.Ethnicity}</td>
     <td>${human.Employment_Status}</td>
     <td>${human.Department}</td>
     <td>${human.Paid_To_Date}</td>

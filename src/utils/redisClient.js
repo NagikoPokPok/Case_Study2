@@ -48,7 +48,7 @@ redisClient.on('end', () => {
 // Enhanced Redis client with more resilient methods
 const enhancedRedisClient = {
   isReady: false,
-  
+
   // Get value with fallback
   async get(key) {
     try {
@@ -56,13 +56,13 @@ const enhancedRedisClient = {
         console.log('⚠️ Redis not ready when attempting to get', key);
         return null;
       }
-      
+
       this.isReady = redisClient.isReady;
       const result = await redisClient.get(key);
-      
+
       // Debug what we're getting from Redis
       console.log(`Redis get: ${key}, result type: ${typeof result}, result length: ${result ? result.length : 0}`);
-      
+
       return result;
     } catch (err) {
       console.error(`❌ Redis get error for key ${key}:`, err);
@@ -70,7 +70,32 @@ const enhancedRedisClient = {
       return null;
     }
   },
-  
+
+  // Redis scan iterator
+  scanIterator(pattern) {
+    return redisClient.scanIterator(pattern);
+  },
+  // Delete value 
+  async del(key) {
+    try {
+      if (!redisClient.isReady) {
+        console.log('⚠️ Redis not ready when attempting to delete', key);
+        return false;
+      }
+      if (!key || typeof key !== 'string' || key.trim() === '') {
+        console.error(`⚠️ Attempted to delete with invalid key: "${key}"`);
+        return false;
+      }
+      await redisClient.del(key);
+      console.log(`✅ Deleted Redis key: ${key}`);
+      return true;
+    } catch (err) {
+      console.error(`❌ Redis del error for key "${key}":`, err);
+      this.isReady = false;
+      return false;
+    }
+  },
+
   // Set value with error handling
   async setEx(key, ttl, value) {
     try {
@@ -78,9 +103,9 @@ const enhancedRedisClient = {
         console.log('⚠️ Redis not ready when attempting to set', key);
         return false;
       }
-      
+
       this.isReady = redisClient.isReady;
-      
+
       // Validate the value to ensure it's properly formatted
       if (typeof value === 'string') {
         try {
@@ -100,7 +125,7 @@ const enhancedRedisClient = {
         console.error('⚠️ Non-string value being cached');
         return false;
       }
-      
+
       await redisClient.setEx(key, ttl, value);
       console.log(`✅ Successfully cached data at key: ${key}`);
       return true;
@@ -110,7 +135,7 @@ const enhancedRedisClient = {
       return false;
     }
   },
-  
+
   // Clean up resources if needed
   async quit() {
     try {

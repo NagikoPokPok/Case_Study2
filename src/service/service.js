@@ -329,8 +329,37 @@ async function getHumanDataService(limit = 50000, lastId = 0) {
     }
 }
 
+async function updateInfoService(humanData) {
+    try {
+        // Cập nhật MySQL
+        await Employee.update({
+        Paid_To_Date: humanData.Paid_To_Date,
+        Paid_Last_Year: humanData.Paid_Last_Year,
+        Vacation_Days: humanData.Vacation_Days
+        }, {
+        where: { idEmployee: humanData.Employee_Id }
+        });
+
+        // Cập nhật SQL Server
+        await Personal.update({
+        Shareholder_Status: humanData.ShareHolder,
+        Gender: humanData.Gender,
+        Ethnicity: humanData.Ethnicity,
+        Employment_Status: humanData.Employment_Status,
+        Department: humanData.Department
+        // Thêm các trường khác nếu cần cập nhật
+        }, {
+        where: { Employee_ID: humanData.Employee_Id }
+        });
+    } catch (error) {
+        console.error('Error updating info:', error);
+        throw new Error('Failed to update information');
+    }
+}
+
 module.exports = { 
     getHumanDataService,
     checkCircuitHealth,
+    updateInfoService,
     circuitState 
 };
