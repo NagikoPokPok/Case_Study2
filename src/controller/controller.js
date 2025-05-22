@@ -3,7 +3,7 @@ const { sendMessage } = require('../utils/rabbitProducer');
 const { getHumans } = require('../utils/dataStore');
 const Pay_Rate = require('../models/Pay_Rate');
 
-const EXCHANGE_NAME = 'personal_changes_exchange';
+const EXCHANGE_NAME = 'person-events-exchange';
 const SENDER_ID = 'myapp'; // Mã định danh hệ thống gửi để consumer khác lọc
 
 async function getHumanData(req, res) {
@@ -42,21 +42,8 @@ async function updateEmployee(req, res) {
       Humans.push(humanData);
     }
 
-    // await sendMessage('personal_changes_myapp', { Employee_ID: humanData.Employee_Id, Operation: 'Update' , data: humanData});
-    // await sendMessage(EXCHANGE_NAME, '', {
-    //   senderId: SENDER_ID,
-    //   Employee_ID: humanData.Employee_Id,
-    //   Operation: 'Update',
-    //   data: humanData
-    // });
     await Promise.all([
-      sendMessage(EXCHANGE_NAME, 'hr.person.update', {
-        senderId: SENDER_ID,
-        Employee_ID: humanData.Employee_Id,
-        Operation: 'Update',
-        data: humanData
-      }),
-      sendMessage(EXCHANGE_NAME, 'payroll.person.update', {
+      sendMessage(EXCHANGE_NAME, 'dashboard.person.update', {
         senderId: SENDER_ID,
         Employee_ID: humanData.Employee_Id,
         Operation: 'Update',
@@ -90,25 +77,15 @@ async function addEmployee(req, res) {
     }
     humans.push(humanData);
 
-    // Gửi message lên RabbitMQ để các hệ thống khác xử lý
-    // await sendMessage(EXCHANGE_NAME, '', {
-    //   senderId: SENDER_ID,
-    //   Employee_ID: humanData.Employee_Id,
-    //   Operation: 'Add',
-    //   data: humanData
-    // });
     await Promise.all([
-      sendMessage(EXCHANGE_NAME, 'hr.person.create', {
+      sendMessage(EXCHANGE_NAME, 'dashboard.person.create', {
         senderId: SENDER_ID,
         Employee_ID: humanData.Employee_Id,
-        Operation: 'Add',
-        data: humanData
-      }),
-      sendMessage(EXCHANGE_NAME, 'payroll.person.create', {
-        senderId: SENDER_ID,
-        Employee_ID: humanData.Employee_Id,
-        Operation: 'Add',
-        data: humanData
+        Operation: 'Update',
+        Vacation_Days: humanData.Vacation_Days,
+        Paid_To_Date: humanData.Paid_To_Date,
+        Paid_Last_Year: humanData.Paid_Last_Year,
+        Pay_Rate: humanData.Pay_Rate
       })
     ]);
 
@@ -146,24 +123,11 @@ async function deleteEmployee(req, res) {
       return res.status(404).json({ success: false, message: 'Nhân viên không tồn tại để xóa' });
     }
 
-    // Gửi message thông báo xóa cho các hệ thống khác qua RabbitMQ
-    // await sendMessage(EXCHANGE_NAME, '', {
-    //   senderId: SENDER_ID,
-    //   Employee_ID: empIdNum,
-    //   Operation: 'Delete'
-    // });
     await Promise.all([
-      sendMessage(EXCHANGE_NAME, 'hr.person.delete', {
+      sendMessage(EXCHANGE_NAME, 'dashboard.person.delete', {
         senderId: SENDER_ID,
         Employee_ID: empIdNum,
         Operation: 'Delete'
-        
-      }),
-      sendMessage(EXCHANGE_NAME, 'payroll.person.delete', {
-        senderId: SENDER_ID,
-        Employee_ID: empIdNum,
-        Operation: 'Delete'
-        
       })
     ]);
 

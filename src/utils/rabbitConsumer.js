@@ -8,31 +8,19 @@ async function startConsumer(exchangeName, queueName, messageHandler, senderId, 
   await channel.assertQueue(queueName, { durable: true });
 
   // Bind queue với exchange theo routing key
-  await channel.bindQueue('payroll-queue', 'person-events-exchange', 'payroll.person.create');
-  await channel.bindQueue('payroll-queue', 'person-events-exchange', 'payroll.person.update');
-  await channel.bindQueue('payroll-queue', 'person-events-exchange', 'payroll.person.delete');
-  await channel.bindQueue('hr-queue', 'person-events-exchange', 'hr.person.create');
-  await channel.bindQueue('hr-queue', 'person-events-exchange', 'hr.person.update');
-  await channel.bindQueue('hr-queue', 'person-events-exchange', 'hr.person.delete');
+  await channel.bindQueue('dashboard-queue', 'person-events-exchange', 'payroll.person.create');
+  await channel.bindQueue('dashboard-queue', 'person-events-exchange', 'payroll.person.update');
+  await channel.bindQueue('dashboard-queue', 'person-events-exchange', 'payroll.person.delete');
+
+  await channel.bindQueue('dashboard-queue', 'person-events-exchange', 'hr.person.create');
+  await channel.bindQueue('dashboard-queue', 'person-events-exchange', 'hr.person.update');
+  await channel.bindQueue('dashboard-queue', 'person-events-exchange', 'hr.person.delete');
   
 
   // await channel.bindQueue(queueName, exchangeName, routingKey);
   console.log(`Waiting for messages in queue ${queueName} bound to exchange ${exchangeName}...`);
 
-  // channel.consume(queueName, async (msg) => {
-  //   if (msg !== null) {
-  //     const content = msg.content.toString();
-  //     console.log(`Received message from ${queueName}:`, content);
-  //     try {
-  //       const data = JSON.parse(content);
-  //       await messageHandler(data);
-  //       channel.ack(msg);
-  //     } catch (error) {
-  //       console.error('Error processing message:', error);
-  //       channel.nack(msg, false, false); // Không gửi lại message lỗi
-  //     }
-  //   }
-  // });
+
   channel.consume(queueName, async (msg) => {
     if (msg !== null) {
       const content = msg.content.toString();
@@ -58,15 +46,3 @@ async function startConsumer(exchangeName, queueName, messageHandler, senderId, 
 }
 
 module.exports = { startConsumer };
-
-// server.js hoặc app.js
-// const { startConsumer } = require('./rabbitConsumer');
-
-// async function processPersonalChange(data) {
-//   // Xử lý dữ liệu nhận được
-//   console.log('Processing personal change:', data);
-//   // Gọi hàm cập nhật DB, cache, gọi API khác ...
-// }
-
-// startConsumer('personal_changes', processPersonalChange);
-

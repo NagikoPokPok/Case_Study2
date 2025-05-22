@@ -239,12 +239,12 @@ async function deleteHuman(id) {
 async function startRabbitConsumer() {
   try {
     await startConsumer(
-      'personal_changes_exchange',       // Tên Exchange
+      'person-events-exchange',       // Tên Exchange
       'dashboard-queue',    // Queue riêng của hệ thống bạn
       handlePersonalChangeMessage,       // Hàm xử lý message nhận được
       'myapp'                           // senderId, để hệ thống bạn bỏ qua message do chính nó gửi
     );
-    console.log('RabbitMQ consumer for personal_changes_exchange started');
+    console.log('RabbitMQ consumer for person-events-exchange started');
   } catch (err) {
     console.error('Failed to start RabbitMQ consumer:', err);
   }
