@@ -164,11 +164,17 @@ async function handlePersonalChangeMessage(message) {
     switch (operation) {
       case 'Create':
         {
-          // Kiểm tra đã tồn tại chưa
+          // Check if the employee already exists
           const exists = humans.some(h => h.Employee_Id === empId);
           if (!exists) {
             humans.push(newData);
             console.log(`Added new employee with ID ${empId}`);
+
+            // Update Redis cache
+            if (redisClient.isReady) {
+              await redisClient.setEx(`humanData:${empId}`, 3600, JSON.stringify(data)); // TTL 1 giờ
+              console.log(`Redis cache set for added Employee_Id ${empId}`);
+            }
           } else {
             console.log(`Employee ID ${empId} đã tồn tại, không thêm`);
           }
@@ -182,10 +188,22 @@ async function handlePersonalChangeMessage(message) {
             humans[idx] = { ...humans[idx], ...newData };
             console.log(`Updated employee with ID ${empId}`);
             console.log('new humans' , humans[idx]);
+
+            // Update Redis cache
+            if (redisClient.isReady) {
+              await redisClient.setEx(`humanData:${empId}`, 3600, JSON.stringify(humans[idx]));
+              console.log(`Redis cache updated for updated Employee_Id ${empId}`);
+            }
           } else {
             // Nếu chưa có thì thêm mới
             humans.push(newData);
             console.log(`Added new employee with ID ${empId} vì không tìm thấy khi update`);
+
+            // Update Redis cache
+            if (redisClient.isReady) {
+              await redisClient.setEx(`humanData:${empId}`, 3600, JSON.stringify(data));
+              console.log(`Redis cache set for new Employee_Id ${empId} on update`);
+            }
           }
         }
         break;
@@ -196,6 +214,12 @@ async function handlePersonalChangeMessage(message) {
           if (idx >= 0) {
             humans.splice(idx, 1);
             console.log(`Deleted employee with ID ${empId}`);
+
+            // Xóa cache Redis key tương ứng
+            if (redisClient.isReady) {
+              await redisClient.del(`humanData:${empId}`);
+              console.log(`Redis cache deleted for deleted Employee_Id ${empId}`);
+            }
           } else {
             console.log(`Employee ID ${empId} không tồn tại để xóa`);
           }

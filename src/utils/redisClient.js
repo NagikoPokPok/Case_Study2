@@ -60,9 +60,6 @@ const enhancedRedisClient = {
       this.isReady = redisClient.isReady;
       const result = await redisClient.get(key);
 
-      // Debug what we're getting from Redis
-      console.log(`Redis get: ${key}, result type: ${typeof result}, result length: ${result ? result.length : 0}`);
-
       return result;
     } catch (err) {
       console.error(`❌ Redis get error for key ${key}:`, err);
@@ -148,7 +145,6 @@ const enhancedRedisClient = {
   }
 };
 
-// Sync isReady state with the underlying client
 // Use a shorter interval for more responsive status updates
 setInterval(() => {
   enhancedRedisClient.isReady = redisClient.isReady;
