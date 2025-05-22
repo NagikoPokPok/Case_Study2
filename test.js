@@ -111,10 +111,14 @@ function updatePaginationControls(totalPages) {
     const prevButton = document.getElementById('prevPage');
     const nextButton = document.getElementById('nextPage');
     const pageInfo = document.getElementById('pageInfo');
+    const firstButton = document.getElementById('firstPage');
+    const lastButton = document.getElementById('lastPage');
     
     if (prevButton) prevButton.disabled = currentPage === 1;
     if (nextButton) nextButton.disabled = currentPage >= totalPages;
     if (pageInfo) pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+    if (firstButton) firstButton.disabled = currentPage === 1;
+    if (lastButton) lastButton.disabled = currentPage >= totalPages;
 }
 
 // Update click handlers for pagination
@@ -314,11 +318,7 @@ document.getElementById('nextPage').addEventListener('click', async function() {
     if (hasMore) {
         lastIdsStack.push(lastId);
         lastId = humans.length > 0 ? humans[humans.length - 1].Employee_Id : lastId;
-        // currentPage++;
-        console.log('currentPage:', currentPage);
-        console.log('lastId:', lastId);
         await fetchAndDisplayHumans();
-        console.log('action next');
     }
 });
 
@@ -326,9 +326,22 @@ document.getElementById('prevPage').addEventListener('click', async function() {
     if (currentPage > 1) {
         lastIdsStack.pop(); // Remove current lastId
         lastId = lastIdsStack[lastIdsStack.length - 1] || 0;
-        // currentPage--;
         await fetchAndDisplayHumans();
-        console.log('action next');
+    }
+});
+
+document.getElementById('firstPage').addEventListener('click', async function () {
+    if (currentPage !== 1) {
+        currentPage = 1;
+        await fetchAndDisplayHumans();
+    }
+});
+
+document.getElementById('lastPage').addEventListener('click', async function () {
+    const totalPages = Math.ceil(humans.length / pageSize);
+    if (currentPage !== totalPages) {
+        currentPage = totalPages;
+        await fetchAndDisplayHumans();
     }
 });
 
