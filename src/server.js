@@ -148,29 +148,39 @@ async function handlePersonalChangeMessage(message) {
           if (!exists) {
             humans.push(data);
             console.log(`Added new employee with ID ${empId}`);
+
+            // Update Redis cache
+            if (redisClient.isReady) {
+              await redisClient.setEx(`humanData:${empId}`, 3600, JSON.stringify(data)); // TTL 1 giờ
+              console.log(`Redis cache set for added Employee_Id ${empId}`);
+            }
           } else {
             console.log(`Employee ID ${empId} đã tồn tại, không thêm`);
           }
-        if (redisClient.isReady) {
-          redisClient.setEx(`humanData:${empId}`, 3600, JSON.stringify(data)); // TTL 1h
-          console.log(`Redis cache updated for Employee_Id ${empId}`);
         }
-      break;
-      }
+        break;
+
       case 'Update':
         {
           const idx = humans.findIndex(h => h.Employee_Id === empId);
           if (idx >= 0) {
             humans[idx] = { ...humans[idx], ...data };
             console.log(`Updated employee with ID ${empId}`);
+
+            // Update Redis cache
+            if (redisClient.isReady) {
+              await redisClient.setEx(`humanData:${empId}`, 3600, JSON.stringify(humans[idx]));
+              console.log(`Redis cache updated for updated Employee_Id ${empId}`);
+            }
           } else {
-            // Nếu chưa có thì thêm mới
             humans.push(data);
             console.log(`Added new employee with ID ${empId} vì không tìm thấy khi update`);
-          }
-          if (redisClient.isReady) {
-            redisClient.setEx(`humanData:${empId}`, 3600, JSON.stringify(data)); // TTL 1h ví dụ
-            console.log(`Redis cache updated for Employee_Id ${empId}`);
+
+            // Update Redis cache
+            if (redisClient.isReady) {
+              await redisClient.setEx(`humanData:${empId}`, 3600, JSON.stringify(data));
+              console.log(`Redis cache set for new Employee_Id ${empId} on update`);
+            }
           }
         }
         break;
@@ -181,12 +191,14 @@ async function handlePersonalChangeMessage(message) {
           if (idx >= 0) {
             humans.splice(idx, 1);
             console.log(`Deleted employee with ID ${empId}`);
+
+            // Xóa cache Redis key tương ứng
+            if (redisClient.isReady) {
+              await redisClient.del(`humanData:${empId}`);
+              console.log(`Redis cache deleted for deleted Employee_Id ${empId}`);
+            }
           } else {
             console.log(`Employee ID ${empId} không tồn tại để xóa`);
-          }
-          if (redisClient.isReady) {
-            await redisClient.del(`humanData:${empId}`);
-            console.log(`Redis cache deleted for Employee_Id ${empId}`);
           }
         }
         break;
