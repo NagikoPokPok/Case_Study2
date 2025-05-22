@@ -39,10 +39,17 @@ tbody tr:hover {
 }
 /* Link phần Create New ở header */
 .table-header a {
-  color: #0d6efd;
   text-decoration: none;
   font-weight: 500;
   margin-left: 10px;
+  padding: 5px;
+  background-color: green;  /* màu xanh lá */
+  color: white;
+  font-weight: bold;
+  font-size: 20px;  /* chữ to hơn */
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
 }
 .table-header a:hover {
   text-decoration: underline;
@@ -130,4 +137,129 @@ tbody tr:hover {
 
 .form-buttons button[type="button"]:hover {
   background-color: #888;
+}
+
+.pagination-controls button {
+  width: 40px;
+  height: 40px;
+  background-color: white;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 40px;
+  text-align: center;
+  padding: 0;
+  user-select: none;
+  transition: background-color 0.3s ease;
+  border-radius: 4px;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+  background-color: #ccc;
+}
+
+.pagination-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Thay chữ trong button bằng mũi tên */
+#prevPage::before {
+  content: '<';
+  display: inline-block;
+  font-weight: bold;
+}
+
+#nextPage::before {
+  content: '>';
+  display: inline-block;
+  font-weight: bold;
+}
+
+/* Ẩn text gốc bên trong button (nếu có) */
+#prevPage, #nextPage {
+  color: transparent;
+  position: relative;
+}
+
+#prevPage::before, #nextPage::before {
+  color: black;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+
+/* CSS cho nút Edit */
+.edit-btn {
+  display: inline-block;
+  padding: 6px 12px;
+  background-color: #007bff;  /* màu xanh dương */
+  color: white;
+  font-weight: bold;
+  font-size: 16px;  /* chữ to hơn */
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+  user-select: none;
+}
+
+.edit-btn:hover {
+  background-color: #3079c8;  /* xanh đậm khi hover */
+}
+
+/* CSS cho nút Delete */
+.delete-btn {
+  display: inline-block;
+  padding: 6px 12px;
+  background-color: red;  /* màu xanh lá */
+  color: white;
+  font-weight: bold;
+  font-size: 16px;  /* chữ to hơn */
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+  user-select: none;
+}
+
+.delete-btn:hover {
+  background-color: #1e7e34;  /* xanh lá đậm khi hover */
+}
+
+#searchIdInput{
+  font-size: 1rem;
+  padding: 5px 10px;
+}
+
+#btnSearchId, #btnClearSearch {
+  background-color: #007bff; /* xanh dương */
+  border: none;
+  color: white;
+  padding: 8px 15px;
+  margin-right: 0px;
+  font-size: 1rem; /* kích thước icon lớn hơn */
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#btnSearchId:hover, #btnClearSearch:hover {
+  background-color: #0056b3; /* xanh đậm khi hover */
+}
+
+#btnClearSearch {
+  background-color: #dc3545; /* đỏ */
+}
+
+#btnClearSearch:hover {
+  background-color: #a71d2a; /* đỏ đậm khi hover */
+}
+
+/* Để icon FontAwesome cân đối trong nút */
+#btnSearchId i, #btnClearSearch i {
+  pointer-events: none;
 }

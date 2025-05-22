@@ -85,11 +85,14 @@ function updateTable(data) {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${human.Employee_Id || ''}</td>
+            <td>${human.First_Name || ''}</td>
+            <td>${human.Last_Name || ''}</td>
             <td>${dataToShareHolder(human.ShareHolder) }</td>
             <td>${normalizeGender(human.Gender) || ''}</td>
             <td>${human.Ethnicity || ''}</td>
             <td>${human.Employment_Status || ''}</td>
             <td>${human.Department || ''}</td>
+            <td>${human.Pay_Id || ''}</td>
             <td>${human.Paid_To_Date || 0}</td>
             <td>${human.Paid_Last_Year || 0}</td>
             <td>${human.Vacation_Days || 0}</td>
@@ -97,7 +100,8 @@ function updateTable(data) {
             <td>${human.Average_Plan_Benefit || 0}</td>
             <td>${human.Pay_Amount || 0}</td>
             <td>${human.Tax_Percentage || 0}</td>
-            <td><a href="#" class="edit-btn" data-id="${human.Employee_Id}">edit</a></td>
+            <td><a href="#" class="edit-btn" data-id="${human.Employee_Id}">Edit</a></td>
+            <td><a href="#" class="delete-btn" data-id="${human.Employee_Id}">Delete</a></td>
         `;
         tbody.appendChild(row);
     });
@@ -161,11 +165,14 @@ function dataToShareHolder(value) {
 function getFormData() {
     return {
         Employee_Id: Number(document.getElementById('Employee_Id').value.trim()),
+        First_Name: document.getElementById('First_Name').value.trim(),
+        Last_Name: document.getElementById('Last_Name').value.trim(),
         ShareHolder: ShareHolderToData(document.getElementById('ShareHolder').value.trim()),
         Gender: genderToData(document.getElementById('Gender').value.trim()),
         Ethnicity: document.getElementById('Ethnicity').value.trim(),
         Employment_Status: document.getElementById('Employment_Status').value.trim(),
         Department: document.getElementById('Department').value.trim(),
+        Pay_Id: document.getElementById('Pay_Id').value.trim(),
         Paid_To_Date: parseFloat(document.getElementById('Paid_To_Date').value) || 0,
         Paid_Last_Year: parseFloat(document.getElementById('Paid_Last_Year').value) || 0,
         Vacation_Days: parseInt(document.getElementById('Vacation_Days').value) || 0,
@@ -179,11 +186,14 @@ function getFormData() {
 // Hàm fill dữ liệu vào form
 function fillForm(human) {
   document.getElementById('Employee_Id').value = human.Employee_Id;
+  document.getElementById('First_Name').value = human.First_Name;
+  document.getElementById('Last_Name').value = human.Last_Name;
   document.getElementById('ShareHolder').value = dataToShareHolder(human.ShareHolder);
   document.getElementById('Gender').value = normalizeGender(human.Gender);
   document.getElementById('Ethnicity').value = human.Ethnicity || ''; // lưu ý key đúng
   document.getElementById('Employment_Status').value = human.Employment_Status;
   document.getElementById('Department').value = human.Department;
+  document.getElementById('Pay_Id').value = human.Pay_Id;
   document.getElementById('Paid_To_Date').value = human.Paid_To_Date;
   document.getElementById('Paid_Last_Year').value = human.Paid_Last_Year;
   document.getElementById('Vacation_Days').value = human.Vacation_Days;
@@ -209,6 +219,41 @@ document.addEventListener('click', function(e) {
     }
   }
 });
+
+document.addEventListener('click', async function(e) {
+    if (e.target.classList.contains('delete-btn')) {
+        e.preventDefault();
+        const employeeId = e.target.getAttribute('data-id');
+// Find if employee with this ID already exists
+        
+        const isConfirmed = confirm(`Bạn có chắc chắn muốn xóa nhân viên ID ${employeeId} không?`)
+        if (isConfirmed) {
+            try {
+
+                    const response = await fetch(`http://localhost:3000/api/route/deleteEmployee/${employeeId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+                    // Xóa thành công
+                    // Cập nhật mảng humans
+                    const index = humans.findIndex(h => h.Employee_Id == employeeId);
+                    if (index >= 0) {
+                        humans.splice(index, 1);
+                    }
+
+                    // Cập nhật bảng
+                    await fetchAndDisplayHumans();
+
+                    alert(`Đã xóa nhân viên ID ${employeeId} thành công.`);
+                
+            } catch (error) {
+                console.error('Lỗi khi xóa:', error);
+                alert('Xảy ra lỗi khi xóa nhân viên.');
+            }
+        }
+    }
+});
+
 
 
 document.getElementById('btnOpenPopup').addEventListener('click', function(e) {
@@ -292,3 +337,45 @@ window.addEventListener('DOMContentLoaded', async () => {
     await fetchAndDisplayHumans();
 });
 
+
+// Lấy các phần tử cần thiết
+const searchInput = document.getElementById('searchIdInput');
+const searchBtn = document.getElementById('btnSearchId');
+const clearSearchBtn = document.getElementById('btnClearSearch');
+const searchMessage = document.getElementById('searchMessage');
+
+// Hàm hiển thị dữ liệu tìm được (mảng có 0 hoặc 1 phần tử)
+function displaySearchResult(data) {
+    updateTable(data); // tận dụng hàm updateTable hiện có
+    updatePaginationControls(1); // chỉ 1 trang duy nhất
+}
+
+// Xử lý tìm kiếm khi nhấn nút Tìm kiếm
+searchBtn.addEventListener('click', function() {
+    const idToFind = searchInput.value.trim();
+    searchMessage.textContent = ''; // xóa thông báo cũ
+    
+    if (!idToFind) {
+        alert('Vui lòng nhập Employee ID để tìm kiếm.');
+        return;
+    }
+    
+    // Tìm employee theo ID trong mảng humans
+    const found = humans.filter(h => String(h.Employee_Id) === idToFind);
+    
+    if (found.length > 0) {
+        displaySearchResult(found);
+    } else {
+        updateTable([]); // xóa bảng
+        updatePaginationControls(0);
+        searchMessage.textContent = 'Không tìm thấy nhân viên với ID này.';
+    }
+});
+
+// Xử lý nút Xóa tìm kiếm để quay lại bảng bình thường
+clearSearchBtn.addEventListener('click', function() {
+    searchInput.value = '';
+    searchMessage.textContent = '';
+    currentPage = 1; // reset trang về 1
+    fetchAndDisplayHumans(); // hiển thị lại bảng đầy đủ
+});

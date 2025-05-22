@@ -1,106 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Employee Table</title>
-<link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Employee Table</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
+
 <body>
 
-<div class="table-wrapper">
-  <div class="table-header">
-    Employees - <a href="#" id="btnOpenPopup">Create New</a>
+  <div class="table-wrapper">
+    <div class="table-header">
+      EMPLOYEES<a href="#" id="btnOpenPopup">Create New</a>
+    </div>
+    <div style="margin-bottom: 15px; text-align: left;">
+      <input type="text" id="searchIdInput" placeholder="Input ID" />
+      <button id="btnSearchId"><i class="fa-solid fa-magnifying-glass"></i></button>
+      <button id="btnClearSearch"><i class="fa-solid fa-eraser"></i></button>
+      <div id="searchMessage" style="color: red; margin-top: 8px;"></div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Employee Id</th>
+          <th>First Name</th>
+          <th>Last Name</th>
+          <th>ShareHolder</th>
+          <th>Gender</th>
+          <th>Ethnicity</th>
+          <th>Employment Status</th>
+          <th>Department</th>
+          <th>Pay Id</th>
+          <th>Paid To Date</th>
+          <th>Paid Last Year</th>
+          <th>Vacation Days</th>
+          <th>Benefit Plan</th>
+          <th>Average Plan Benefit</th>
+          <th>Pay Amount</th>
+          <th>Tax Percentage</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Dữ liệu thêm vào đây -->
+      </tbody>
+    </table>
   </div>
-  <table>
-    <thead>
-      <tr>
-        <th>Employee Id</th>
-        <th>ShareHolder</th>
-        <th>Gender</th>
-        <th>Ethnicity</th>
-        <th>Employment Status</th>
-        <th>Department</th>
-        <th>Paid To Date</th>
-        <th>Paid Last Year</th>
-        <th>Vacation Days</th>
-        <th>Benefit Plan</th>
-        <th>Average Plan Benefit</th>
-        <th>Pay Amount</th>
-        <th>Tax Percentage</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Dữ liệu thêm vào đây -->
-    </tbody>
-  </table>
-</div>
 
-<!-- Popup modal -->
-<div id="popupForm" class="popup-overlay">
-  <div class="popup-content">
-    <h2>Create New Employee</h2>
-    <form id="employeeForm">
-      <label for="Employee_Id">Employee_Id</label>
-      <input type="text" id="Employee_Id" name="Employee_Id" required />
+  <!-- Popup modal -->
+  <div id="popupForm" class="popup-overlay">
+    <div class="popup-content">
+      <h2>Create New Employee</h2>
+      <form id="employeeForm">
+        <label for="Employee_Id">Employee_Id</label>
+        <input type="text" id="Employee_Id" name="Employee_Id" required />
 
-      <label for="ShareHolder">ShareHolder</label>
-      <input type="text" id="ShareHolder" name="ShareHolder" />
+        <label for="First_Name">First_Name</label>
+        <input type="text" id="First_Name" name="First_Name" required />
 
-      <label for="Gender">Gender</label>
-      <select id="Gender" name="Gender" required>
-        <option value="">-- Select Gender --</option>
-        <option value="Male">Male</option>
-        <option value="Female">Female</option>
-        <option value="Other">Other</option>
-      </select>
+        <label for="Last_Name">Last_Name</label>
+        <input type="text" id="Last_Name" name="Last_Name" required />
 
-      <label for="Ethnicity">Ethnicity</label>
-      <input type="text" id="Ethnicity" name="Ethnicity" />
+        <label for="ShareHolder">ShareHolder</label>
+        <select id="ShareHolder" name="ShareHolder" required>
+          <option value="">-- Select Gender --</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
 
-      <label for="Employment_Status">Employment_Status</label>
-      <input type="text" id="Employment_Status" name="Employment_Status" />
+        <label for="Gender">Gender</label>
+        <select id="Gender" name="Gender" required>
+          <option value="">-- Select Gender --</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
 
-      <label for="Department">Department</label>
-      <input type="text" id="Department" name="Department" />
+        <label for="Ethnicity">Ethnicity</label>
+        <input type="text" id="Ethnicity" name="Ethnicity" />
 
-      <label for="Paid_To_Date">Paid_To_Date</label>
-      <input type="number" id="Paid_To_Date" name="Paid_To_Date" min="0" step="0.01" />
+        <label for="Employment_Status">Employment_Status</label>
+        <select id="Employment_Status" name="Employment_Status" required>
+          <option value="">-- Select Gender --</option>
+          <option value="On Leave">On Leave</option>
+          <option value="Terminated">Terminated</option>
+          <option value="Active">Active</option>
+        </select>
 
-      <label for="Paid_Last_Year">Paid_Last_Year</label>
-      <input type="number" id="Paid_Last_Year" name="Paid_Last_Year" min="0" step="0.01" />
+        <label for="Department">Department</label>
+        <input type="text" id="Department" name="Department" />
 
-      <label for="Vacation_Days">Vacation_Days</label>
-      <input type="number" id="Vacation_Days" name="Vacation_Days" min="0" />
+        <label for="Pay ID">Pay Id</label>
+        <input type="text" id="Pay_Id" name="Pay_Id" />
 
-      <label for="Benefit_Plan">Benefit_Plan</label>
-      <input type="text" id="Benefit_Plan" name="Benefit_Plan" />
+        <label for="Paid_To_Date">Paid_To_Date</label>
+        <input type="number" id="Paid_To_Date" name="Paid_To_Date" min="0" step="0.01" />
 
-      <label for="Average_Plan_Benefit">Average_Plan_Benefit</label>
-      <input type="number" id="Average_Plan_Benefit" name="Average_Plan_Benefit" min="0" step="0.01" />
+        <label for="Paid_Last_Year">Paid_Last_Year</label>
+        <input type="number" id="Paid_Last_Year" name="Paid_Last_Year" min="0" step="0.01" />
 
-      <label for="Pay_Amount">Pay_Amount</label>
-      <input type="number" id="Pay_Amount" name="Pay_Amount" min="0" step="0.01" />
+        <label for="Vacation_Days">Vacation_Days</label>
+        <input type="number" id="Vacation_Days" name="Vacation_Days" min="0" />
 
-      <label for="Tax_Percentage">Tax_Percentage</label>
-      <input type="number" id="Tax_Percentage" name="Tax_Percentage" min="0" max="100" step="0.01" />
+        <label for="Benefit_Plan">Benefit_Plan</label>
+        <input type="text" id="Benefit_Plan" name="Benefit_Plan" />
 
-      <div class="form-buttons">
-        <button type="button" id="btnClosePopup">Close</button>
-        <button type="submit">Save</button>
-      </div>
-    </form>
+        <label for="Average_Plan_Benefit">Average_Plan_Benefit</label>
+        <input type="number" id="Average_Plan_Benefit" name="Average_Plan_Benefit" min="0" step="0.01" />
+
+        <label for="Pay_Amount">Pay_Amount</label>
+        <input type="number" id="Pay_Amount" name="Pay_Amount" min="0" step="0.01" />
+
+        <label for="Tax_Percentage">Tax_Percentage</label>
+        <input type="number" id="Tax_Percentage" name="Tax_Percentage" min="0" max="100" step="0.01" />
+
+        <div class="form-buttons">
+          <button type="button" id="btnClosePopup">Close</button>
+          <button type="submit">Save</button>
+        </div>
+      </form>
+    </div>
   </div>
-</div>
 
-<!-- Add after your table in test.html -->
-<div class="pagination-controls" style="margin: 20px 0; text-align: center;">
-  <button id="prevPage" disabled>Previous</button>
-  <span id="pageInfo"></span>
-  <button id="nextPage">Next</button>
-</div>
+  <!-- Add after your table in test.html -->
+  <div class="pagination-controls" style="margin: 20px 0; text-align: center;">
+    <button id="prevPage" disabled>Previous</button>
+    <span id="pageInfo"></span>
+    <button id="nextPage">Next</button>
+  </div>
 
-<script src="\test.js"></script>
+  <script src="\test.js"></script>
 
 </body>
 
