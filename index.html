@@ -293,66 +293,31 @@
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="/src/public/socketConnection.js"></script>
 
-<!-- Data refresh script that integrates with the charts -->
 <script>
-    // Listen for the dataRefreshed event to update charts
-    document.addEventListener('dataRefreshed', function(event) {
-        const data = event.detail;
-        // Update all charts and statistics
-        updateDashboardWithData(data);
-    });
-
-    // Function to update all dashboard elements with new data
-    function updateDashboardWithData(data) {
-    if (!data || !Array.isArray(data) || data.length === 0) {
-        console.warn('No valid data for dashboard update:', data);
-        return; 
-    }
-        
-        console.log('Updating dashboard with new data');
-        
-        // Update summary numbers
-        updateSummaryNumbers(data);
-        
-        // Update charts - these functions should be defined in your total-earning.js file
-        if (typeof updateDepartmentChart === 'function') updateDepartmentChart(data);
-        if (typeof updateGenderChart === 'function') updateGenderChart(data);
-        if (typeof updateEmployeeChart === 'function') updateEmployeeChart(data);
-        if (typeof updateShareholderChart === 'function') updateShareholderChart(data);
-        if (typeof updateEthnicityChart === 'function') updateEthnicityChart(data);
+  document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Load dữ liệu ban đầu và render dashboard
+    if (typeof window.updateDataFromAPI === 'function') {
+      await window.updateDataFromAPI();
     }
 
-    // Example function to update summary numbers
-    function updateSummaryNumbers(data) {
-        // Calculate total money
-        const totalMoney = data.reduce((sum, item) => sum + (parseFloat(item.Annual_Salary) || 0), 0);
-        document.getElementById('number-money').textContent = totalMoney.toLocaleString('en-US');
-        
-        // Count unique shareholders
-        const shareholders = new Set(data.filter(item => item.Shareholder === 'Y').map(item => item.Employee_Id));
-        document.getElementById('number-shareholder').textContent = shareholders.size;
-        
-        // Count unique departments
-        const departments = new Set(data.map(item => item.Department));
-        document.getElementById('number-department').textContent = departments.size;
-    }
+    // 2. Đăng ký sự kiện WebSocket nhận tin cập nhật từ server
+    if (window.socketClient) {
+      window.socketClient.on('personalChanged', async () => {
+        console.log('Received personalChanged event from WebSocket');
+        if (typeof window.updateDataFromAPI === 'function') {
+          await window.updateDataFromAPI();
+        }
+      });
 
-    // Initialize data on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        // Fetch initial data
-        updateDataFromAPI();
-        
-        // Register for WebSocket events
-        window.socketClient.on('personalChanged', function(data) {
-            console.log('Personal data changed:', data);
-            updateDataFromAPI();
-        });
-        
-        window.socketClient.on('benefitPlanUpdated', function(data) {
-            console.log('Benefit plan updated:', data);
-            updateDataFromAPI();
-        });
-    });
+      window.socketClient.on('benefitPlanUpdated', async () => {
+        console.log('Received benefitPlanUpdated event from WebSocket');
+        if (typeof window.updateDataFromAPI === 'function') {
+          await window.updateDataFromAPI();
+        }
+      });
+    }
+  });
 </script>
+
 </body>
 </html>

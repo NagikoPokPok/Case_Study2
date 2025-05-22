@@ -82,18 +82,21 @@ async function getHumanDataService(limit = 50000, lastId = 0) {
     const cacheKey = `humanData:${limit}:${lastId}`;
     const startTime = Date.now();
     
-    // Check circuit breaker status first
-    await checkCircuitHealth();
 
     try {
+        await checkCircuitHealth();
         // 1. Always check Redis cache first
-        const cachedData = await redisClient.get(cacheKey);
+                const cachedData = await redisClient.get(cacheKey);
         if (cachedData) {
             console.log('Cache hit - serving data from Redis');
-            return JSON.parse(cachedData);
+            const parsed = JSON.parse(cachedData);
+            // Validate cached data
+            if (parsed && Array.isArray(parsed.data) && parsed.data.length > 0) {
+                return parsed;
+            }
+            // If invalid cache, continue to fetch fresh data
+            console.log('Invalid cache data, fetching fresh data');
         }
-        
-        console.log('Cache miss - querying databases');
         
         // If both circuits are open, we can't get fresh data
         if (circuitState.mysqlCircuitOpen && circuitState.sqlServerCircuitOpen) {
@@ -333,6 +336,11 @@ async function updateInfoService(humanData) {
         }, {
         where: { Employee_ID: humanData.Employee_Id }
         });
+
+        // Xóa cache cũ
+        const cacheKey = `humanData:50000:0`; // Key chính
+        await redisClient.del(cacheKey);
+
     } catch (error) {
         console.error('Error updating info:', error);
         throw new Error('Failed to update information');

@@ -5,6 +5,13 @@ import { renderShareholderPieChart } from '/Charts/shareholderPieChart.js';
 import { renderEthnicityBarChart } from '/Charts/ethnicityBarChart.js';
 import { compactUSD } from './chart_options.js';
 
+let departmentChart = null;
+let employeeChart = null;
+let genderChart = null;
+let shareholderChart = null;
+let ethnicityChart = null;
+
+
 async function fetchHumanData() {
     try {
         console.log('Attempting to fetch data from server...');
@@ -108,121 +115,229 @@ async function fetchHumanData() {
 }
 
 document.addEventListener("DOMContentLoaded", async function () {
-    const data = await fetchHumanData();
+  // --- Khai báo và lấy các phần tử DOM 1 lần duy nhất ---
+  const elements = {
+    numberMoney: document.getElementById("number-money"),
+    numberShareholder: document.getElementById("number-shareholder"),
+    numberDepartment: document.getElementById("number-department"),
+    totalDepartment: document.getElementById("total-department"),
+    totalGender: document.getElementById("total-gender"),
+    totalEmployee: document.getElementById("total-employee"),
+    totalShareholder: document.getElementById("total-shareholder"),
+    totalEthnicity: document.getElementById("total-ethnicity"),
+    charts: {
+      department: document.getElementById('departmentBarChart'),
+      employee: document.getElementById('employeePieChart'),
+      gender: document.getElementById('genderPieChart'),
+      shareholder: document.getElementById('shareholderPieChart'),
+      ethnicity: document.getElementById('ethnicityBarChart')
+    }
+  };
 
-    // Get DOM elements
-    const numberMoney = document.getElementById("number-money");
-    const numberShareholder = document.getElementById("number-shareholder");
-    const numberDepartment = document.getElementById("number-department");
-    
-    const totalDepartment = document.getElementById("total-department");
-    const totalGender = document.getElementById("total-gender");
-    const totalEmployee = document.getElementById("total-employee");
-    const totalShareholder = document.getElementById("total-shareholder");
-    const totalEthnicity = document.getElementById("total-ethnicity");
+  // --- Hàm lấy dữ liệu từ server ---
+  async function fetchHumanData() {
+    try {
+      const response = await fetch(`http://localhost:3000/api/humanList`);
+      if (!response.ok) throw new Error(`Server responded with status ${response.status}`);
+      const result = await response.json();
+      if (!result || !Array.isArray(result)) throw new Error("Invalid data format");
+      return result;
+    } catch (err) {
+      console.error('Error fetching human data:', err);
+      return [];
+    }
+  }
 
-    // Calculate totals
-    const totalEarning = data.reduce((sum, human) => sum + human.Total_Earning, 0);
-    const shareholders = data.filter(human => human.ShareHolder).length;
-    const departments = [...new Set(data.map(human => human.Department))];
+  // --- Hàm tính toán thống kê từ data ---
+  function calculateStats(data) {
+    const totalEarning = data.reduce((sum, h) => sum + (h.Total_Earning || 0), 0);
+    const shareholders = data.filter(h => h.ShareHolder === true).length;
+    const departments = [...new Set(data.filter(h => h.Department).map(h => h.Department))];
 
-    // Update summary numbers - use format() method with compactUSD
-    numberMoney.textContent = compactUSD.format(totalEarning);
-    numberShareholder.textContent = shareholders;
-    numberDepartment.textContent = departments.length;
-
-    // Process department data
     const departmentData = departments
-    .map(dept => ({
+      .map(dept => ({
         name: dept || 'Not Specified',
-        total: data
-            .filter(human => human.Department === dept)
-            .reduce((sum, human) => sum + human.Total_Earning, 0)
-    }))
-    .sort((a, b) => b.total - a.total) // Sort from largest to smallest
-    .slice(0, 10); 
+        total: data.filter(h => h.Department === dept)
+                   .reduce((sum, h) => sum + (h.Total_Earning || 0), 0)
+      }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10);
 
-    // Process employment status data with null check
     const employmentData = {
-        fulltime: data
-            .filter(human => human.Employment_Status?.toLowerCase() === 'full-time')
-            .reduce((sum, human) => sum + human.Total_Earning, 0),
-        parttime: data
-            .filter(human => human.Employment_Status?.toLowerCase() === 'part-time')
-            .reduce((sum, human) => sum + human.Total_Earning, 0),
-        other: data
-            .filter(human => !['full-time', 'part-time'].includes(human.Employment_Status?.toLowerCase()))
-            .reduce((sum, human) => sum + human.Total_Earning, 0)
+      fulltime: data.filter(h => h.Employment_Status?.toLowerCase() === 'full-time')
+                    .reduce((sum, h) => sum + (h.Total_Earning || 0), 0),
+      parttime: data.filter(h => h.Employment_Status?.toLowerCase() === 'part-time')
+                    .reduce((sum, h) => sum + (h.Total_Earning || 0), 0),
+      other: data.filter(h => !['full-time', 'part-time'].includes(h.Employment_Status?.toLowerCase()))
+                 .reduce((sum, h) => sum + (h.Total_Earning || 0), 0),
     };
 
-    // Process gender data
     const genderData = {
-        male: data.filter(human => human.Gender).reduce((sum, human) => sum + human.Total_Earning, 0),
-        female: data.filter(human => !human.Gender).reduce((sum, human) => sum + human.Total_Earning, 0)
+      male: data.filter(h => h.Gender === true).reduce((sum, h) => sum + (h.Total_Earning || 0), 0),
+      female: data.filter(h => h.Gender === false).reduce((sum, h) => sum + (h.Total_Earning || 0), 0),
     };
 
-    // Process shareholder data
     const shareholderData = {
-        shareholder: data.filter(human => human.ShareHolder)
-            .reduce((sum, human) => sum + human.Total_Earning, 0),
-        nonShareHolder: data.filter(human => !human.ShareHolder)
-            .reduce((sum, human) => sum + human.Total_Earning, 0)
+      shareholder: data.filter(h => h.ShareHolder === true)
+                       .reduce((sum, h) => sum + (h.Total_Earning || 0), 0),
+      nonShareHolder: data.filter(h => h.ShareHolder !== true)
+                          .reduce((sum, h) => sum + (h.Total_Earning || 0), 0),
     };
 
-    // Process ethnicity data
-    const ethnicities = [...new Set(data.map(human => human.Ethnicity))];
+    const ethnicities = [...new Set(data.filter(h => h.Ethnicity).map(h => h.Ethnicity))];
     const ethnicityData = ethnicities
-    .map(ethnicity => ({
-        name: ethnicity || 'Unknown',
-        total: data
-            .filter(human => human.Ethnicity === ethnicity)
-            .reduce((sum, human) => sum + human.Total_Earning, 0)
-    }))
-    .sort((a, b) => b.total - a.total);
+      .map(eth => ({
+        name: eth || 'Unknown',
+        total: data.filter(h => h.Ethnicity === eth)
+                   .reduce((sum, h) => sum + (h.Total_Earning || 0), 0)
+      }))
+      .sort((a, b) => b.total - a.total);
 
-    // Update totals in UI - use format() method with compactUSD
-    totalDepartment.textContent = compactUSD.format(departmentData.reduce((sum, dept) => sum + dept.total, 0));
-    totalGender.textContent = compactUSD.format(genderData.male + genderData.female);
-    totalEmployee.textContent = compactUSD.format(employmentData.fulltime + employmentData.parttime);
-    totalShareholder.textContent = compactUSD.format(shareholderData.shareholder + shareholderData.nonShareHolder);
-    totalEthnicity.textContent = compactUSD.format(ethnicityData.reduce((sum, eth) => sum + eth.total, 0));
+    return {
+      totalEarning,
+      shareholders,
+      departments,
+      departmentData,
+      employmentData,
+      genderData,
+      shareholderData,
+      ethnicityData,
+    };
+  }
 
-    // Update department chart rendering
-    renderDepartmentBarChart(
-        document.getElementById('departmentBarChart').getContext('2d'),
-        departmentData.map(d => d.name),
-        departmentData.map(d => d.total),
-        [],
-        'money'
+  // --- Hàm cập nhật giao diện tổng quan ---
+  function updateSummaryNumbers(stats, elems) {
+    elems.numberMoney.textContent = compactUSD.format(stats.totalEarning);
+    elems.numberShareholder.textContent = stats.shareholders;
+    elems.numberDepartment.textContent = stats.departments.length;
+    elems.totalDepartment.textContent = compactUSD.format(stats.departmentData.reduce((sum, d) => sum + d.total, 0));
+    elems.totalGender.textContent = compactUSD.format(stats.genderData.male + stats.genderData.female);
+    elems.totalEmployee.textContent = compactUSD.format(stats.employmentData.fulltime + stats.employmentData.parttime);
+    elems.totalShareholder.textContent = compactUSD.format(stats.shareholderData.shareholder + stats.shareholderData.nonShareHolder);
+    elems.totalEthnicity.textContent = compactUSD.format(stats.ethnicityData.reduce((sum, e) => sum + e.total, 0));
+  }
+
+  // --- Hàm cập nhật các biểu đồ ---
+ function updateCharts(stats, chartElems) {
+  if (chartElems.department) {
+    if (departmentChart) {
+      departmentChart.destroy();
+      departmentChart = null;
+    }
+    departmentChart = renderDepartmentBarChart(
+      chartElems.department.getContext('2d'),
+      stats.departmentData.map(d => d.name),
+      stats.departmentData.map(d => d.total),
+      [],
+      'money'
     );
+  }
 
-    // Update employment chart rendering
-    renderEmployeePieChart(
-        document.getElementById('employeePieChart').getContext('2d'),
-        ['Full-time', 'Part-time'],
-        [employmentData.fulltime, employmentData.parttime],
-        ['#1cc88a', '#f6c23e']
+  if (chartElems.employee) {
+    if (employeeChart) {
+      employeeChart.destroy();
+      employeeChart = null;
+    }
+    employeeChart = renderEmployeePieChart(
+      chartElems.employee.getContext('2d'),
+      ['Full-time', 'Part-time'],
+      [stats.employmentData.fulltime, stats.employmentData.parttime],
+      ['#1cc88a', '#f6c23e']
     );
+  }
 
-    renderGenderPieChart(
-        document.getElementById('genderPieChart').getContext('2d'),
-        ['Male', 'Female'],
-        [genderData.male, genderData.female],
-        ['#4e73df', '#e74a3b']
+  if (chartElems.gender) {
+    if (genderChart) {
+      genderChart.destroy();
+      genderChart = null;
+    }
+    genderChart = renderGenderPieChart(
+      chartElems.gender.getContext('2d'),
+      ['Male', 'Female'],
+      [stats.genderData.male, stats.genderData.female],
+      ['#4e73df', '#e74a3b']
     );
+  }
 
-    renderShareholderPieChart(
-        document.getElementById('shareholderPieChart').getContext('2d'),
-        ['Shareholder', 'Non-Shareholder'],
-        [shareholderData.shareholder, shareholderData.nonShareHolder],
-        ['#6f42c1', '#d63384']
+  if (chartElems.shareholder) {
+    if (shareholderChart) {
+      shareholderChart.destroy();
+      shareholderChart = null;
+    }
+    shareholderChart = renderShareholderPieChart(
+      chartElems.shareholder.getContext('2d'),
+      ['Shareholder', 'Non-Shareholder'],
+      [stats.shareholderData.shareholder, stats.shareholderData.nonShareHolder],
+      ['#6f42c1', '#d63384']
     );
+  }
 
-    renderEthnicityBarChart(
-        document.getElementById('ethnicityBarChart').getContext('2d'),
-        ethnicityData.map(d => d.name),
-        ethnicityData.map(d => d.total),
-        [],
-        'money'
+  if (chartElems.ethnicity) {
+    if (ethnicityChart) {
+      ethnicityChart.destroy();
+      ethnicityChart = null;
+    }
+    ethnicityChart = renderEthnicityBarChart(
+      chartElems.ethnicity.getContext('2d'),
+      stats.ethnicityData.map(e => e.name),
+      stats.ethnicityData.map(e => e.total),
+      [],
+      'money'
     );
+  }
+}
+
+
+  // --- Hàm tổng để cập nhật dashboard ---
+  function updateDashboard(data, elems) {
+    try {
+      if (!data || !Array.isArray(data)) throw new Error("Invalid data");
+      const stats = calculateStats(data);
+      updateSummaryNumbers(stats, elems);
+      updateCharts(stats, elems.charts);
+      console.log('Dashboard updated successfully');
+    } catch (error) {
+      console.error('Error updating dashboard:', error);
+    }
+  }
+
+  // --- Load data ban đầu và render dashboard ---
+  let data = await fetchHumanData();
+  updateDashboard(data, elements);
+
+  // --- Setup websocket lắng nghe event ---
+  if (typeof io !== 'undefined') {
+    const socket = io('http://localhost:3000');
+
+    socket.on('connect', () => {
+      console.log('WebSocket connected');
+      const statusElem = document.getElementById('connection-status');
+      if (statusElem) {
+        statusElem.className = 'status-connected';
+        statusElem.textContent = 'WebSocket: connected';
+      }
+    });
+
+    socket.on('disconnect', () => {
+      console.log('WebSocket disconnected');
+      const statusElem = document.getElementById('connection-status');
+      if (statusElem) {
+        statusElem.className = 'status-disconnected';
+        statusElem.textContent = 'WebSocket: disconnected';
+      }
+    });
+
+    // Lắng nghe event dữ liệu thay đổi
+    socket.on('personalChanged', async () => {
+      console.log('Received personalChanged event');
+      data = await fetchHumanData();
+      updateDashboard(data, elements);
+    });
+
+    socket.on('benefitPlanUpdated', async () => {
+      console.log('Received benefitPlanUpdated event');
+      data = await fetchHumanData();
+      updateDashboard(data, elements);
+    });
+  }
 });

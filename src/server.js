@@ -233,11 +233,12 @@ async function handlePersonalChangeMessage(message) {
 
     // Phát sự kiện websocket để frontend cập nhật
     if (typeof io !== 'undefined') {
+      const updatedData = getHumans();
       io.emit('personalChanged', {
+        data: updatedData,
         message: `${operation} employee ${empId}`,
         employeeId: empId,
         operation,
-        employee: data || null
       });
       console.log('WebSocket event personalChanged emitted');
     }
