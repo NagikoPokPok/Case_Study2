@@ -99,7 +99,7 @@ async function calculateOnServerStart() {
     }
 
     setHumans(allHumans);
-    console.log("humans[0]", allHumans[0].First_Name);
+    
     // Delete old data from Redis cache
     const keys = [];
     for await (const key of redisClient.scanIterator({ MATCH: 'humanData:*' })) {
