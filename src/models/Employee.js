@@ -2,6 +2,15 @@
 module.exports = (sequelize, DataTypes) => {
     const Employee = sequelize.define('Employee', {
       idEmployee: { type: DataTypes.INTEGER, primaryKey: true },
+      First_Name: DataTypes.STRING,
+      Last_Name: DataTypes.STRING,
+      PayRates_id: {
+            type: DataTypes.INTEGER,
+            references: {
+                model: 'pay_rates',
+                key: 'idPay_Rates'
+            }
+      },
       Paid_To_Date: DataTypes.DECIMAL(2, 0),
       Paid_Last_Year: DataTypes.DECIMAL(2, 0),
       Vacation_Days: DataTypes.INTEGER,

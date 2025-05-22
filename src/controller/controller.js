@@ -81,7 +81,7 @@ async function addEmployee(req, res) {
       sendMessage(EXCHANGE_NAME, 'dashboard.person.create', {
         senderId: SENDER_ID,
         Employee_ID: humanData.Employee_Id,
-        Operation: 'Update',
+        Operation: 'Create',
         Vacation_Days: humanData.Vacation_Days,
         Paid_To_Date: humanData.Paid_To_Date,
         Paid_Last_Year: humanData.Paid_Last_Year,

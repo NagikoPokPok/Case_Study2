@@ -5,6 +5,7 @@ module.exports = (sequelize, DataTypes) => {
     const Personal = sequelize.define('Personal', {
       Employee_ID: { type: DataTypes.INTEGER, primaryKey: true },
       First_Name: DataTypes.STRING,
+      Last_Name: DataTypes.STRING,
       Gender: DataTypes.BOOLEAN,
       Ethnicity: DataTypes.STRING,
       Shareholder_Status: DataTypes.BOOLEAN,

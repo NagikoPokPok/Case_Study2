@@ -99,6 +99,7 @@ async function calculateOnServerStart() {
     }
 
     setHumans(allHumans);
+    console.log("humans[0]", allHumans[0].First_Name);
     // Delete old data from Redis cache
     const keys = [];
     for await (const key of redisClient.scanIterator({ MATCH: 'humanData:*' })) {
@@ -126,6 +127,12 @@ async function calculateOnServerStart() {
   }
 }
 
+function cleanData(data) {
+  return Object.fromEntries(
+    Object.entries(data).filter(([_, v]) => v !== undefined && v !== null && v !== '')
+  );
+}
+
 async function handlePersonalChangeMessage(message) {
   console.log('Received message:', message);
 
@@ -133,7 +140,21 @@ async function handlePersonalChangeMessage(message) {
     const humans = getHumans();
     const empId = Number(message.Employee_ID);
     const operation = message.Operation;
-    const data = message.data;
+    const data = {
+        Employee_Id: empId,
+        First_Name: message.First_Name,
+        Last_Name: message.Last_Name,
+        ShareHolder: message.Shareholder_Status,
+        Gender: message.Gender,
+        Ethnicity: message.Ethnicity,
+        Pay_Id: message.PayRates_id,
+        Paid_To_Date: message.Paid_To_Date,
+        Paid_Last_Year: message.Paid_Last_Year,
+        Vacation_Days: message.Vacation_Days,
+        Benefit_Plan: message.Benefit_Plans
+    };
+    
+    const newData = cleanData(data);
 
     if (!empId && operation !== 'Delete') {
       console.warn('Message thiếu Employee_ID hoặc data, bỏ qua');
@@ -141,12 +162,12 @@ async function handlePersonalChangeMessage(message) {
     }
 
     switch (operation) {
-      case 'Add':
+      case 'Create':
         {
           // Kiểm tra đã tồn tại chưa
           const exists = humans.some(h => h.Employee_Id === empId);
           if (!exists) {
-            humans.push(data);
+            humans.push(newData);
             console.log(`Added new employee with ID ${empId}`);
           } else {
             console.log(`Employee ID ${empId} đã tồn tại, không thêm`);
@@ -158,11 +179,12 @@ async function handlePersonalChangeMessage(message) {
         {
           const idx = humans.findIndex(h => h.Employee_Id === empId);
           if (idx >= 0) {
-            humans[idx] = { ...humans[idx], ...data };
+            humans[idx] = { ...humans[idx], ...newData };
             console.log(`Updated employee with ID ${empId}`);
+            console.log('new humans' , humans[idx]);
           } else {
             // Nếu chưa có thì thêm mới
-            humans.push(data);
+            humans.push(newData);
             console.log(`Added new employee with ID ${empId} vì không tìm thấy khi update`);
           }
         }

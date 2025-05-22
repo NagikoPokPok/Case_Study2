@@ -1,8 +1,8 @@
 class Human {
     constructor(data) {
         this.Employee_Id = data.Employee_Id;
-        this.First_Name = data.First_Name ;
-        this.Last_Name = data.Last_Name ;
+        this.First_Name = data.First_Name;
+        this.Last_Name = data.Last_Name;
         this.ShareHolder = data.ShareHolder || false;
         // this.Gender = (data.Gender === undefined || data.Gender === null) ? 'Unknown' : data.Gender;
         this.Gender = data.Gender;

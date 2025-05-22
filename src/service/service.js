@@ -204,7 +204,7 @@ async function getHumanDataService(limit = 50000, lastId = 0) {
                         Ethnicity: person.Ethnicity,
                         Employment_Status: person.Employment?.Employment_status || 'Not Specified',
                         Department: person.JobHistory?.Department || 'Not Specified',
-                        Pay_Id: employee.idPay_Rate,
+                        PayRates_id: employee.idPay_Rate,
                         Paid_To_Date: employee.Paid_To_Date || 0,
                         Paid_Last_Year: employee.Paid_Last_Year || 0,
                         Vacation_Days: employee.Vacation_Days || 0,
@@ -225,6 +225,8 @@ async function getHumanDataService(limit = 50000, lastId = 0) {
                 
                 humans.push(new Human({
                       Employee_Id: person.Employee_ID,
+                      First_Name: person.First_Name,
+                      Last_Name: person.Last_Name,
                       ShareHolder: person.Shareholder_Status,
                       Gender: person.Gender,
                       Ethnicity: person.Ethnicity,
@@ -236,32 +238,6 @@ async function getHumanDataService(limit = 50000, lastId = 0) {
             }
 
             
-
-            // if (employee) {
-            //     // Sử dụng BenefitPlan thay vì Benefit_Plans
-            //     const avgBenefit = person.BenefitPlan && 
-            //         typeof person.BenefitPlan.Deductable === 'number' && 
-            //         typeof person.BenefitPlan.Percentage_CoPay === 'number' ? 
-            //         (person.BenefitPlan.Deductable * (100 - person.BenefitPlan.Percentage_CoPay)) / 100 : 0;
-        
-
-            //       humans.push(new Human({
-            //           Employee_Id: person.Employee_ID,
-            //           ShareHolder: person.Shareholder_Status,
-            //           Gender: person.Gender,
-            //           Ethnicity: person.Ethnicity,
-            //           Employment_Status: person.Employment?.Employment_status || 'Not Specified',
-            //           Department: person.JobHistory?.Department || 'Not Specified',
-            //           Paid_To_Date: employee.Paid_To_Date || 0,
-            //           Paid_Last_Year: employee.Paid_Last_Year || 0,
-            //           Vacation_Days: employee.Vacation_Days || 0,
-            //           Benefit_Plan: person.BenefitPlan?.Benefit_Plan_ID,
-            //           Average_Plan_Benefit: avgBenefit,
-            //           Pay_Amount: employee.Pay_Rate?.Pay_Amount || 0,
-            //           Tax_Percentage: employee.Pay_Rate?.Tax_Percentage || 0
-            //       }));
-            //   }
-            
           }
         
         // === Thêm employee không tồn tại trong Personal ===
@@ -271,6 +247,9 @@ async function getHumanDataService(limit = 50000, lastId = 0) {
             if (!personalIds.has(emp.idEmployee)) {
                 humans.push(new Human({
                 Employee_Id: emp.idEmployee,
+                First_Name: emp.First_Name,
+                Last_Name: emp.Last_Name,
+                PayRates_id: emp.idPay_Rate,
                 Paid_To_Date: emp.Paid_To_Date || 0,
                 Paid_Last_Year: emp.Paid_Last_Year || 0,
                 Vacation_Days: emp.Vacation_Days || 0,
