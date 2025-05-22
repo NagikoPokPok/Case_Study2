@@ -254,34 +254,6 @@ async function handlePersonalChangeMessage(message) {
   }
 }
 
-// Add new employee
-async function addHuman(human) {
-    const response = await fetch('http://localhost:3000/api/humanList', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(human)
-    });
-    return await response.json();
-}
-
-// Update employee
-async function updateHuman(id, human) {
-    const response = await fetch(`http://localhost:3000/api/humanList/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(human)
-    });
-    return await response.json();
-}
-
-// Delete employee
-async function deleteHuman(id) {
-    const response = await fetch(`http://localhost:3000/api/humanList/${id}`, {
-        method: 'DELETE'
-    });
-    return await response.json();
-}
-
 async function startRabbitConsumer() {
   try {
     await startConsumer(
