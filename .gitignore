@@ -13,5 +13,16 @@ logs
 Thumbs.db
 
 #src/config/config.json
+src/config/config.json
 
 #src/database/sequelizeConnection.js
+src/database/sequelizeConnection.js
+
+#src\database\sqlServerConnection.js
+src/database/sqlServerConnection.js
+
+# .gitignore
+.gitignore
+
+package-lock.json
+package.json
