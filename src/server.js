@@ -147,7 +147,7 @@ async function handlePersonalChangeMessage(message) {
         ShareHolder: message.Shareholder_Status,
         Gender: message.Gender,
         Ethnicity: message.Ethnicity,
-        Pay_Id: message.PayRates_id,
+        PayRates_id: message.PayRates_id,
         Paid_To_Date: message.Paid_To_Date,
         Paid_Last_Year: message.Paid_Last_Year,
         Vacation_Days: message.Vacation_Days,
