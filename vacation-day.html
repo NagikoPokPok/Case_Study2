@@ -279,6 +279,7 @@
 
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 <script src="/src/public/socketConnection.js"></script>
+
 <script>
     // Listen for the dataRefreshed event to update charts and stats
     document.addEventListener('dataRefreshed', function(event) {
@@ -292,9 +293,6 @@
             console.warn('No valid data for dashboard update:', data);
             return;
         }
-        // Call your update functions here, e.g.:
-        // updateSummaryNumbers(data);
-        // updateBenefitChart(data); // or updateVacationChart(data)
     }
 
     // Initialize data on page load and register for socket events
