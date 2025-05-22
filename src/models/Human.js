@@ -9,7 +9,7 @@ class Human {
         this.Ethnicity = data.Ethnicity ;
         this.Employment_Status = data.Employment_Status ;
         this.Department = data.Department ;
-        this.Pay_Id = data.Pay_Id ;
+        this.PayRates_id = data.PayRates_id ;
         this.Paid_To_Date = data.Paid_To_Date || 0;
         this.Paid_Last_Year = data.Paid_Last_Year || 0;
         this.Vacation_Days = data.Vacation_Days || 0;

@@ -47,10 +47,20 @@ async function updateEmployee(req, res) {
         senderId: SENDER_ID,
         Employee_ID: humanData.Employee_Id,
         Operation: 'Update',
+        First_Name: humanData.First_Name,
+        Last_Name: humanData.Last_Name,
+        ShareHolder: humanData.ShareHolder,
+        Gender: humanData.Gender,
+        Ethnicity: humanData.Ethnicity,
+        Employment_Status: humanData.Employment_Status,
+        Department: humanData.Department,
         Vacation_Days: humanData.Vacation_Days,
         Paid_To_Date: humanData.Paid_To_Date,
         Paid_Last_Year: humanData.Paid_Last_Year,
-        Pay_Id: humanData.Pay_Id
+        Benefit_Plan: humanData.Benefit_Plan,
+        PayRates_id: humanData.PayRates_id,
+        Pay_Amount: humanData.Pay_Amount,
+        Tax_Percentage: humanData.Tax_Percentage
       })
     ]);
 
@@ -82,10 +92,20 @@ async function addEmployee(req, res) {
         senderId: SENDER_ID,
         Employee_ID: humanData.Employee_Id,
         Operation: 'Create',
+        First_Name: humanData.First_Name,
+        Last_Name: humanData.Last_Name,
+        ShareHolder: humanData.ShareHolder,
+        Gender: humanData.Gender,
+        Ethnicity: humanData.Ethnicity,
+        Employment_Status: humanData.Employment_Status,
+        Department: humanData.Department,
         Vacation_Days: humanData.Vacation_Days,
         Paid_To_Date: humanData.Paid_To_Date,
         Paid_Last_Year: humanData.Paid_Last_Year,
-        Pay_Id: humanData.Pay_Id
+        Benefit_Plan: humanData.Benefit_Plan,
+        PayRates_id: humanData.PayRates_id,
+        Pay_Amount: humanData.Pay_Amount,
+        Tax_Percentage: humanData.Tax_Percentage
       })
     ]);
 
