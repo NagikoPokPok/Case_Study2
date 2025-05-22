@@ -1,11 +1,15 @@
 class Human {
     constructor(data) {
         this.Employee_Id = data.Employee_Id;
+        this.First_Name = data.First_Name ;
+        this.Last_Name = data.Last_Name ;
         this.ShareHolder = data.ShareHolder || false;
-        this.Gender = (data.Gender === undefined || data.Gender === null) ? 'Unknown' : data.Gender;
-        this.Ethnicity = data.Ethnicity || 'Unknown';
-        this.Employment_Status = data.Employment_Status || 'Unknown';
-        this.Department = data.Department || 'Unknown';
+        // this.Gender = (data.Gender === undefined || data.Gender === null) ? 'Unknown' : data.Gender;
+        this.Gender = data.Gender;
+        this.Ethnicity = data.Ethnicity ;
+        this.Employment_Status = data.Employment_Status ;
+        this.Department = data.Department ;
+        this.Pay_Id = data.Pay_Id ;
         this.Paid_To_Date = data.Paid_To_Date || 0;
         this.Paid_Last_Year = data.Paid_Last_Year || 0;
         this.Vacation_Days = data.Vacation_Days || 0;

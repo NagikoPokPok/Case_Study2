@@ -50,7 +50,7 @@ async function updateEmployee(req, res) {
         Vacation_Days: humanData.Vacation_Days,
         Paid_To_Date: humanData.Paid_To_Date,
         Paid_Last_Year: humanData.Paid_Last_Year,
-        Pay_Rate: humanData.Pay_Rate
+        Pay_Id: humanData.Pay_Id
       })
     ]);
 
@@ -85,7 +85,7 @@ async function addEmployee(req, res) {
         Vacation_Days: humanData.Vacation_Days,
         Paid_To_Date: humanData.Paid_To_Date,
         Paid_Last_Year: humanData.Paid_Last_Year,
-        Pay_Rate: humanData.Pay_Rate
+        Pay_Id: humanData.Pay_Id
       })
     ]);
 

@@ -79,11 +79,13 @@ async function fetchAndDisplayHumans() {
 function updateTable(data) {
     const tbody = document.querySelector('tbody');
     tbody.innerHTML = '';
+    console.log('Updating table with data:', data);
+    // console.log('Updating table with data:', data[7]);
     data.forEach(human => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${human.Employee_Id || ''}</td>
-            <td>${human.ShareHolder || ''}</td>
+            <td>${dataToShareHolder(human.ShareHolder) }</td>
             <td>${normalizeGender(human.Gender) || ''}</td>
             <td>${human.Ethnicity || ''}</td>
             <td>${human.Employment_Status || ''}</td>
@@ -137,12 +139,30 @@ function normalizeGender(value) {
   else if (v == '0') return 'Female';
 }
 
+function genderToData(value) {
+  const v = value;
+  if (v == 'Male' ) return true;
+  else if (v == 'Female') return false;
+}
+
+function ShareHolderToData(value) {
+    const v = value;
+    if (v == 'Yes' ) return true;
+    else if (v == 'No') return false;
+}
+
+function dataToShareHolder(value) {
+    const v = value;
+    if (v == true ) return 'Yes';
+    else if (v == false) return 'No';
+}
+
 // Add this function before your form submit handler
 function getFormData() {
     return {
-        Employee_Id: document.getElementById('Employee_Id').value.trim(),
-        ShareHolder: document.getElementById('ShareHolder').value.trim(),
-        Gender: document.getElementById('Gender').value,
+        Employee_Id: Number(document.getElementById('Employee_Id').value.trim()),
+        ShareHolder: ShareHolderToData(document.getElementById('ShareHolder').value.trim()),
+        Gender: genderToData(document.getElementById('Gender').value.trim()),
         Ethnicity: document.getElementById('Ethnicity').value.trim(),
         Employment_Status: document.getElementById('Employment_Status').value.trim(),
         Department: document.getElementById('Department').value.trim(),
@@ -159,7 +179,7 @@ function getFormData() {
 // Hàm fill dữ liệu vào form
 function fillForm(human) {
   document.getElementById('Employee_Id').value = human.Employee_Id;
-  document.getElementById('ShareHolder').value = human.ShareHolder;
+  document.getElementById('ShareHolder').value = dataToShareHolder(human.ShareHolder);
   document.getElementById('Gender').value = normalizeGender(human.Gender);
   document.getElementById('Ethnicity').value = human.Ethnicity || ''; // lưu ý key đúng
   document.getElementById('Employment_Status').value = human.Employment_Status;
@@ -206,25 +226,28 @@ document.getElementById('employeeForm').addEventListener('submit', async functio
     try {
         // Find if employee with this ID already exists
         const index = humans.findIndex(h => h.Employee_Id === newData.Employee_Id);
+        console.log('Index of existing employee:',typeof newData.Employee_Id);
+        console.log('Index of existing employee:',typeof humans[0].Employee_Id);
 
         if (index >= 0) {
             // Update existing employee
             const isConfirmed = confirm("Đã có ID trùng, bạn có muốn chỉnh sửa không?");
             if (isConfirmed) {
                 // Call API to update databases
-                await fetch(`http://localhost:3000/api/humanList/${newData.Employee_Id}`, {
-                    method: 'PUT',
+                await fetch(`http://localhost:3000/api/route/updateEmployee`, {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(newData)
                 });
                 humans[index] = newData;
+                console.log('Updated existing employee:', newData);
             } else {
                 resetFormFields();
                 return;
             }
         } else {
             // Add new employee
-            await fetch('http://localhost:3000/api/humanList', {
+            await fetch('http://localhost:3000/api/route/addEmployee', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newData)
@@ -246,8 +269,11 @@ document.getElementById('nextPage').addEventListener('click', async function() {
     if (hasMore) {
         lastIdsStack.push(lastId);
         lastId = humans.length > 0 ? humans[humans.length - 1].Employee_Id : lastId;
-        currentPage++;
+        // currentPage++;
+        console.log('currentPage:', currentPage);
+        console.log('lastId:', lastId);
         await fetchAndDisplayHumans();
+        console.log('action next');
     }
 });
 
@@ -255,8 +281,9 @@ document.getElementById('prevPage').addEventListener('click', async function() {
     if (currentPage > 1) {
         lastIdsStack.pop(); // Remove current lastId
         lastId = lastIdsStack[lastIdsStack.length - 1] || 0;
-        currentPage--;
+        // currentPage--;
         await fetchAndDisplayHumans();
+        console.log('action next');
     }
 });
 
