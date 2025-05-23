@@ -392,3 +392,17 @@ clearSearchBtn.addEventListener('click', function() {
     currentPage = 1; // reset trang về 1
     fetchAndDisplayHumans(); // hiển thị lại bảng đầy đủ
 });
+
+if (window.socketClient) {
+    window.socketClient.on('personalChanged', async () => {
+        // Clear local cache and reload data
+        humans = [];
+        currentPage = 1;
+        await fetchAndDisplayHumans();
+    });
+    window.socketClient.on('benefitPlanUpdated', async () => {
+        humans = [];
+        currentPage = 1;
+        await fetchAndDisplayHumans();
+    });
+}
