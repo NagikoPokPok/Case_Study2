@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin</title>
+    <link type="text/css" href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link type="text/css" href="/bootstrap/css/bootstrap-responsive.min.css" rel="stylesheet">
+    <link type="text/css" href="/css/theme.css" rel="stylesheet">
+    <link type="text/css" href="/images/icons/css/font-awesome.css" rel="stylesheet">
+    <link type="text/css" href='http://fonts.googleapis.com/css?family=Open+Sans:400italic,600italic,400,600'
+        rel='stylesheet'>
+    <link type="text/css" href="/bootstrap/css/main.css" rel="stylesheet">
+
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
+
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+
+</head>
+
+<body>
+    <div id="error-container" style="display:none; color:red; margin:10px 0;">
+        <span id="error-message"></span>
+    </div>
+
+    <div class="connection-indicator">
+        <span id="connection-status" class="status-disconnected">WebSocket: disconnected</span>
+    </div>
+    <style>
+        .connection-indicator {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+
+        .status-connected {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .status-disconnected {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .status-error {
+            background-color: #ff9800;
+            color: white;
+        }
+
+        .status-failed {
+            background-color: #9E9E9E;
+            color: white;
+        }
+    </style>
+
+
+    <div class="wrapper">
+        <div class="container">
+            <div class="row">
+                <div class="span3">
+                    <div class="sidebar">
+                        <ul class="widget widget-menu unstyled">
+                            <li>
+                                <a data-toggle="collapse" href="#togglePages">
+                                    <i class="menu-icon icon-dashboard"></i>
+                                    <i class="icon-chevron-down pull-right"></i>
+                                    <i class="icon-chevron-up pull-right"></i>
+                                    Dashboard
+                                </a>
+                                <ul id="togglePages" class="collapse in unstyled"> <!-- thêm `in` ở đây -->
+                                    <li>
+                                        <a href="index.html">
+                                            <i class="icon-money"></i>
+                                            Total earnings
+                                        </a>
+                                    </li>
+                                    <li><a href="vacation-day.html"><i class="icon-inbox"></i>Vacation days </a></li>
+                                    <li><a href="benefit.html"><i class="icon-tasks"></i>Average benefit </a></li>
+                                    <li><a href="test.html"><i class="icon-tasks"></i>Employee List </a></li>
+                                </ul>
+                            </li>
+                            <li><a href="#"><i class="menu-icon icon-signout"></i>Logout </a></li>
+                        </ul>
+
+                    </div>
+                    <!--/.sidebar-->
+                </div>
+                <!--/.span3-->
+                <div class="span9">
+                    <div class="content">
+                        <div class="btn-controls">
+                            <div class="btn-box-row row-fluid">
+                                <a href="#" class="btn-box big span4">
+                                    <i class="icon-money"></i>
+                                    <div class="total-money">
+                                        <b id="number-money">2.400</b>
+                                        <b class="concurrency">USD</b>
+                                    </div>
+
+                                    <p class="text-muted">
+                                        Total
+                                    </p>
+                                </a><a href="#" class="btn-box big span4">
+                                    <i class="icon-user"></i>
+                                    <b id="number-shareholder">10</b>
+                                    <p class="text-muted">
+                                        Shareholders
+                                    </p>
+                                </a><a href="#" class="btn-box big span4">
+                                    <i class="icon-home"></i>
+                                    <b id="number-department">5</b>
+                                    <p class="text-muted">
+                                        Department
+                                    </p>
+                                </a>
+                            </div>
+
+                        </div>
+
+                        <div class="table-header">
+                            EMPLOYEES<button href="#" id="btnOpenPopup">Create New</a>
+                        </div>
+                        <div style="margin-bottom: 15px; text-align: left;">
+                            <input type="text" id="searchIdInput" placeholder="Input ID" />
+                            <button id="btnSearchId"><i class="fa-solid fa-magnifying-glass"></i></button>
+                            <button id="btnClearSearch"><i class="fa-solid fa-eraser"></i></button>
+                            <div id="searchMessage" style="color: red; margin-top: 8px;"></div>
+                        </div>
+                        <div class="table-wrapper" style="max-width: 100%; overflow-x: auto;">
+
+
+
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Employee Id</th>
+                                        <th>First Name</th>
+                                        <th>Last Name</th>
+                                        <th>ShareHolder</th>
+                                        <th>Gender</th>
+                                        <th>Ethnicity</th>
+                                        <th>Employment Status</th>
+                                        <th>Department</th>
+                                        <th>PayRates Id</th>
+                                        <th>Paid To Date</th>
+                                        <th>Paid Last Year</th>
+                                        <th>Vacation Days</th>
+                                        <th>Benefit Plan</th>
+                                        <th>Average Plan Benefit</th>
+                                        <th>Pay Amount</th>
+                                        <th>Tax Percentage</th>
+                                        <th>Edit</th>
+                                        <th>Delete</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dữ liệu thêm vào đây -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Popup modal -->
+                        <div id="popupForm" class="popup-overlay">
+                            <div class="popup-content">
+                                <h2>Create New Employee</h2>
+                                <form id="employeeForm">
+                                    <label for="Employee_Id">Employee ID</label>
+                                    <input type="text" id="Employee_Id" name="Employee_Id" required />
+
+                                    <label for="First_Name">First Name</label>
+                                    <input type="text" id="First_Name" name="First_Name" required />
+
+                                    <label for="Last_Name">Last Name</label>
+                                    <input type="text" id="Last_Name" name="Last_Name" required />
+
+                                    <label for="ShareHolder">ShareHolder</label>
+                                    <select id="ShareHolder" name="ShareHolder" required>
+                                        <option value="">-- Select ShareHolder --</option>
+                                        <option value="Yes">Yes</option>
+                                        <option value="No">No</option>
+                                    </select>
+
+                                    <label for="Gender">Gender</label>
+                                    <select id="Gender" name="Gender" required>
+                                        <option value="">-- Select Gender --</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                    </select>
+
+                                    <label for="Ethnicity">Ethnicity</label>
+                                    <input type="text" id="Ethnicity" name="Ethnicity" />
+
+                                    <label for="Employment_Status">Employment Status</label>
+                                    <select id="Employment_Status" name="Employment_Status" required>
+                                        <option value="">-- Select Employment_Status --</option>
+                                        <option value="Part-time">Part-time</option>
+                                        <option value="Full-time">Full-time</option>
+                                    </select>
+
+                                    <label for="Department">Department</label>
+                                    <input type="text" id="Department" name="Department" />
+
+                                    <label for="Pay ID">PayRates Id</label>
+                                    <input type="text" id="PayRates_Id" name="Pay_Id" />
+
+                                    <label for="Paid_To_Date">Paid To Date</label>
+                                    <input type="number" id="Paid_To_Date" name="Paid_To_Date" min="0" step="0.01" />
+
+                                    <label for="Paid_Last_Year">Paid Last Year</label>
+                                    <input type="number" id="Paid_Last_Year" name="Paid_Last_Year" min="0"
+                                        step="0.01" />
+
+                                    <label for="Vacation_Days">Vacation Days</label>
+                                    <input type="number" id="Vacation_Days" name="Vacation_Days" min="0" />
+
+                                    <label for="Benefit_Plan">Benefit Plan</label>
+                                    <input type="text" id="Benefit_Plan" name="Benefit_Plan" />
+
+                                    <label for="Average_Plan_Benefit">Average Plan Benefit</label>
+                                    <input type="number" id="Average_Plan_Benefit" name="Average_Plan_Benefit" min="0"
+                                        step="0.01" />
+
+                                    <label for="Pay_Amount">Pay Amount</label>
+                                    <input type="number" id="Pay_Amount" name="Pay_Amount" min="0" step="0.01" />
+
+                                    <label for="Tax_Percentage">Tax Percentage</label>
+                                    <input type="number" id="Tax_Percentage" name="Tax_Percentage" min="0" max="100"
+                                        step="0.01" />
+
+                                    <div class="form-buttons">
+                                        <button type="button" id="btnClosePopup">Close</button>
+                                        <button type="submit">Save</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Add after your table in test.html -->
+                        <div class="pagination-controls" style="margin: 20px 0; text-align: center;">
+                            <button id="firstPage" disabled>First</button>
+                            <button id="prevPage" disabled>Previous</button>
+                            <span id="pageInfo"></span>
+                            <button id="nextPage" disabled>Next</button>
+                            <button id="lastPage" disabled>Last</button>
+                        </div>
+
+
+
+
+                    </div>
+                    <!--/.content-->
+                </div>
+                <!--/.span9-->
+            </div>
+        </div>
+        <!--/.container-->
+    </div>
+
+
+
+
+    <script src="/Scripts/jquery-1.9.1.min.js" type="text/javascript"></script>
+    <script src="/Scripts/jquery-ui-1.10.1.custom.min.js" type="text/javascript"></script>
+    <script src="/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
+    <script src="/Scripts/flot/jquery.flot.js" type="text/javascript"></script>
+    <script src="/Scripts/flot/jquery.flot.resize.js" type="text/javascript"></script>
+    <script src="/Scripts/datatables/jquery.dataTables.js" type="text/javascript"></script>
+    <script src="/Scripts/common.js" type="text/javascript"></script>
+
+    <script src="/Scripts/sidebarToggle.js"></script>
+
+
+    <script type="module">
+        import { insertNavbar, insertFooter } from '/Scripts/component.js';
+        insertNavbar('body', 'afterbegin');
+        insertFooter('body', 'beforeend');
+    </script>
+
+    <!-- <script src="/Scripts/layout.js" type="text/javascript"></script> -->
+
+    <!-- !-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"
+        type="text/javascript"></script>
+    <script>
+        flatpickr("#yearPicker", {
+            dateFormat: "Y",         // Chỉ hiển thị năm
+            defaultDate: new Date(), // Tùy chọn: năm hiện tại
+            plugins: [
+                new monthSelectPlugin({
+                    shorthand: true,
+                    dateFormat: "Y",
+                    theme: "light"
+                })
+            ]
+        });
+    </script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+    <script type="module" src="/src/public/total-earning.js"></script>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="/src/public/socketConnection.js"></script>
+
+    <script src="\test.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="/src/public/socketConnection.js"></script>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Load dữ liệu ban đầu và render dashboard
+            if (typeof window.updateDataFromAPI === 'function') {
+                await window.updateDataFromAPI();
+            }
+
+            // 2. Đăng ký sự kiện WebSocket nhận tin cập nhật từ server
+            if (window.socketClient) {
+                window.socketClient.on('personalChanged', async () => {
+                    console.log('Received personalChanged event from WebSocket');
+                    if (typeof window.updateDataFromAPI === 'function') {
+                        await window.updateDataFromAPI();
+                    }
+                });
+
+                window.socketClient.on('benefitPlanUpdated', async () => {
+                    console.log('Received benefitPlanUpdated event from WebSocket');
+                    if (typeof window.updateDataFromAPI === 'function') {
+                        await window.updateDataFromAPI();
+                    }
+                });
+            }
+        });
+    </script>
+
+</body>
+
+</html>

@@ -98,6 +98,7 @@ tbody tr:hover {
 
 .popup-content input,
 .popup-content select {
+  height: fit-content;
   width: 100%;
   padding: 6px 8px;
   margin-top: 4px;
@@ -232,6 +233,8 @@ tbody tr:hover {
 
 .edit-btn:hover {
   background-color: #32547a;  /* xanh đậm khi hover */
+  color: white;
+  text-decoration: none;
 }
 
 /* CSS cho nút Delete */
@@ -250,11 +253,14 @@ tbody tr:hover {
 
 .delete-btn:hover {
   background-color: #ff3b3b;  /* xanh lá đậm khi hover */
+  color: white;
+  text-decoration: none;
 }
 
 #searchIdInput{
   font-size: 1rem;
   padding: 5px 10px;
+  margin: 0;
 }
 
 #btnSearchId, #btnClearSearch {
