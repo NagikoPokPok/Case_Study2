@@ -98,6 +98,7 @@ async function calculateOnServerStart() {
       console.log(`📦 Batch ${batchCount}: Đã tải thêm ${dataBatch.length} bản ghi (Tổng: ${allHumans.length})`);
     }
 
+    console.log("Humans[0]: ", allHumans[0]);
     setHumans(allHumans);
     
     // Delete old data from Redis cache

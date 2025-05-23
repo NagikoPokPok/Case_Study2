@@ -38,21 +38,21 @@ tbody tr:hover {
   background-color: #f9f9f9;
 }
 /* Link phần Create New ở header */
-.table-header a {
+.table-header button {
   text-decoration: none;
   font-weight: 500;
   margin-left: 10px;
   padding: 5px;
   background-color: green;  /* màu xanh lá */
   color: white;
-  font-weight: bold;
-  font-size: 20px;  /* chữ to hơn */
-  border-radius: 4px;
+  font-weight: normal;
+  font-size: 16px;  /* chữ to hơn */
+  border-radius: 5px;
   text-decoration: none;
   transition: background-color 0.3s ease;
 }
-.table-header a:hover {
-  text-decoration: underline;
+.table-header button:hover {
+  background-color: #32c855;
 }
 
 
@@ -86,14 +86,14 @@ tbody tr:hover {
 .popup-content h2 {
   margin-top: 0;
   margin-bottom: 15px;
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .popup-content label {
   display: block;
   margin-top: 10px;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 16px;
 }
 
 .popup-content input,
@@ -102,9 +102,9 @@ tbody tr:hover {
   padding: 6px 8px;
   margin-top: 4px;
   box-sizing: border-box;
-  font-size: 14px;
+  font-size: 15px;
   border: 1px solid #ccc;
-  border-radius: 3px;
+  border-radius: 5px;
 }
 
 .form-buttons {
@@ -163,24 +163,6 @@ tbody tr:hover {
   opacity: 0.5;
 }
 
-.pagination-controls button {
-    padding: 8px 14px;
-    margin: 0 4px;
-    font-size: 16px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    background-color: white;
-    cursor: pointer;
-  }
-
-  .pagination-controls button:hover {
-    background-color: #eee;
-  }
-
-  .pagination-controls button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
 /* Thay chữ trong button bằng mũi tên */
 #prevPage::before {
   content: '<';
@@ -249,14 +231,14 @@ tbody tr:hover {
 }
 
 .edit-btn:hover {
-  background-color: #3079c8;  /* xanh đậm khi hover */
+  background-color: #32547a;  /* xanh đậm khi hover */
 }
 
 /* CSS cho nút Delete */
 .delete-btn {
   display: inline-block;
   padding: 6px 12px;
-  background-color: red;  /* màu xanh lá */
+  background-color: rgb(215, 55, 55);  /* màu xanh lá */
   color: white;
   font-weight: bold;
   font-size: 16px;  /* chữ to hơn */
@@ -267,7 +249,7 @@ tbody tr:hover {
 }
 
 .delete-btn:hover {
-  background-color: #1e7e34;  /* xanh lá đậm khi hover */
+  background-color: #ff3b3b;  /* xanh lá đậm khi hover */
 }
 
 #searchIdInput{
