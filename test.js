@@ -484,21 +484,47 @@ document.getElementById('lastPage').addEventListener('click', async function () 
     }
 });
 
+function getCurrentPageEmployees() {
+    const start = (currentPage - 1) * pageSize;
+    const end = start + pageSize;
+    return humans.slice(start, end);
+}
+
 async function initializeApplication() {
     console.log('🚀 Initializing application...');
     
     try {
-        // First, setup socket handlers
         await setupSocketHandlers();
         
-        // Then load initial data with cache busting
+        // Load initial data once
         await fetchAndDisplayHumans(true, 'initialization');
+        
+        // Setup selective socket updates
+        if (window.socketClient) {
+            window.socketClient.on('personalChanged', async (data) => {
+                // Skip if it's just a data request message
+                if (data.message === 'Personal data requested') {
+                    console.log('Skipping refresh for data request message');
+                    return;
+                }
+                
+                // Only update if there's actual data change
+                if (data.operation && ['Create', 'Update', 'Delete'].includes(data.operation)) {
+                    const currentEmployees = getCurrentPageEmployees();
+                    if (data.Employee_ID && currentEmployees.some(emp => 
+                        emp.Employee_Id === Number(data.Employee_ID))) {
+                        await fetchAndDisplayHumans(true, 'socket');
+                    }
+                }
+            });
+        }
+        
+        // Remove or modify dataRefreshed event handler
+        document.removeEventListener('dataRefreshed', fetchAndDisplayHumans);
         
         console.log('✅ Application initialized successfully');
     } catch (error) {
         console.error('❌ Error during initialization:', error);
-        // Try to load data without cache busting as fallback
-        await fetchAndDisplayHumans(false, 'fallback');
     }
 }
 
@@ -548,18 +574,16 @@ clearSearchBtn.addEventListener('click', function () {
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApplication);
 
-// Handle page visibility changes for fresh data
-document.addEventListener('visibilitychange', async () => {
-    if (!document.hidden) {
-        console.log('👁️ Page became visible, refreshing data...');
-        await fetchAndDisplayHumans(true, 'visibility');
-    }
-});
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
 
-// Handle browser back/forward navigation
-window.addEventListener('pageshow', async (event) => {
-    if (event.persisted) {
-        console.log('🔄 Page restored from cache, refreshing data...');
-        await fetchAndDisplayHumans(true, 'pageshow');
-    }
-});
+const debouncedFetchAndDisplay = debounce(fetchAndDisplayHumans, 1000);

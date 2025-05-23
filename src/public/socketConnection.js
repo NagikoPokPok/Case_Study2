@@ -39,63 +39,25 @@ class SocketClient {
     }
 
     setupDataEventListeners() {
-        this.socket.on('dataInitialized', (data) => {
-            console.log('📊 Received dataInitialized:', data);
-            this.hasInitialData = true;
-            
-            // Execute callbacks
-            if (this.eventCallbacks['dataInitialized']) {
-                this.eventCallbacks['dataInitialized'].forEach(callback => callback(data));
-            }
-            
-            // Force refresh data from API immediately
-            this.forceUpdateDataFromAPI();
-        });
+    this.socket.on('personalChanged', (data) => {
+        console.log('👤 Received personalChanged:', data);
+        
+        // Skip if it's just a data request
+        if (data.message === 'Personal data requested') {
+            return;
+        }
+        
+        // Only trigger update for actual changes
+        if (this.eventCallbacks['personalChanged']) {
+            this.eventCallbacks['personalChanged'].forEach(callback => callback(data));
+        }
+    });
 
-        // 🔧 FIX: Enhanced personalChanged handler
-        this.socket.on('personalChanged', (data) => {
-            console.log('👤 Received personalChanged:', data);
-            
-            // Execute callbacks first
-            if (this.eventCallbacks['personalChanged']) {
-                this.eventCallbacks['personalChanged'].forEach(callback => callback(data));
-            }
-            
-            // 🔧 FIX: Always force a full refresh for consistency
-            // This ensures we get the latest data from server
-            console.log('🔄 Triggering data refresh due to personalChanged event');
-            this.forceUpdateDataFromAPI();
-        });
-
-        // 🔧 FIX: New event handler for dataRefreshNeeded
-        this.socket.on('dataRefreshNeeded', (data) => {
-            console.log('🔄 Received dataRefreshNeeded:', data);
-            
-            // Force immediate refresh
-            this.forceUpdateDataFromAPI();
-        });
-
-        this.socket.on('benefitPlanUpdated', (data) => {
-            console.log('💰 Received benefitPlanUpdated:', data);
-            if (this.eventCallbacks['benefitPlanUpdated']) {
-                this.eventCallbacks['benefitPlanUpdated'].forEach(callback => callback(data));
-            }
-            this.forceUpdateDataFromAPI();
-        });
-
-        // Handle error events
-        this.socket.on('error', (error) => {
-            console.error('❌ Socket error:', error);
-            this.updateConnectionStatus('error');
-        });
-
-        // 🔧 FIX: Handle reconnection events
-        this.socket.on('reconnect', () => {
-            console.log('🔄 Reconnected to server');
-            this.updateConnectionStatus('connected');
-            // Force refresh after reconnection
-            this.forceUpdateDataFromAPI();
-        });
+    // Remove automatic update on reconnect
+    this.socket.on('reconnect', () => {
+        console.log('🔄 Reconnected to server');
+        this.updateConnectionStatus('connected');
+    });
     }
 
     // Register a callback function for a specific event
@@ -133,16 +95,17 @@ class SocketClient {
     }
     
     forceUpdateDataFromAPI() {
-        console.log('⚡ Force updating data from API...');
-        
-        // Cancel any pending debounced updates
-        if (this.debounceTimeout) {
-            clearTimeout(this.debounceTimeout);
-            this.debounceTimeout = null;
-        }
-        
-        // Update immediately
-        updateDataFromAPI();
+    if (this.isFetchingData) {
+        console.log('⏳ Update already in progress, skipping...');
+        return;
+    }
+    
+    console.log('⚡ Force updating data from API...');
+    this.isFetchingData = true;
+    
+    updateDataFromAPI().finally(() => {
+        this.isFetchingData = false;
+    });
     }
     
     // Debounced API update function - keep for other scenarios
@@ -259,27 +222,14 @@ async function updateDataFromAPI() {
 }
 
 function initializeSocketClient() {
-    // Create and export a singleton instance
     const socketClient = new SocketClient();
-    
-    // Export the socketClient for use in other modules
     window.socketClient = socketClient;
-    
-    // Make updateDataFromAPI globally available
     window.updateDataFromAPI = updateDataFromAPI;
     
     document.addEventListener('DOMContentLoaded', () => {
-        // Add any initialization that needs DOM to be ready
         console.log('🎯 Socket client initialized and ready');
-        
-        // Try to get initial data
-        updateDataFromAPI();
-    });
-    
-    // 🔧 FIX: Handle page visibility changes
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && socketClient.socket.connected) {
-            console.log('👁️ Page became visible, refreshing data...');
+        // Chỉ load data lần đầu khi khởi tạo
+        if (!window.currentHumanData) {
             updateDataFromAPI();
         }
     });
