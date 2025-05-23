@@ -8,29 +8,28 @@ class SocketClient {
         this.maxReconnectAttempts = 5;
         this.eventCallbacks = {};
         
-        // Debounce properties - FIXED: Reduce debounce time
         this.lastDataFetch = 0;
         this.debounceTimeout = null;
-        this.debounceInterval = 2000; // Reduced to 2 seconds for faster updates
+        this.debounceInterval = 1000; // Reduced to 1 second for faster updates
         
         // Track if we have initial data
         this.hasInitialData = false;
+        
+        this.isFetchingData = false;
     }
 
     setupEventHandlers() {
         this.socket.on('connect', () => {
-            console.log('Connected to WebSocket server');
+            console.log('🔗 Connected to WebSocket server');
             this.reconnectAttempts = 0;
             this.updateConnectionStatus('connected');
             
-            // Only request initial data if we don't have it yet
-            if (!this.hasInitialData) {
-                this.socket.emit('requestPersonalData');
-            }
+            // Request initial data on connect
+            this.socket.emit('requestPersonalData');
         });
 
         this.socket.on('disconnect', () => {
-            console.log('Disconnected from WebSocket server');
+            console.log('📡 Disconnected from WebSocket server');
             this.updateConnectionStatus('disconnected');
             this.handleReconnect();
         });
@@ -40,81 +39,63 @@ class SocketClient {
     }
 
     setupDataEventListeners() {
-        // FIXED: Handle different event types properly
         this.socket.on('dataInitialized', (data) => {
-            console.log('Received dataInitialized:', data);
+            console.log('📊 Received dataInitialized:', data);
             this.hasInitialData = true;
+            
             // Execute callbacks
             if (this.eventCallbacks['dataInitialized']) {
                 this.eventCallbacks['dataInitialized'].forEach(callback => callback(data));
             }
-            // Force refresh data from API
+            
+            // Force refresh data from API immediately
             this.forceUpdateDataFromAPI();
         });
 
+        // 🔧 FIX: Enhanced personalChanged handler
         this.socket.on('personalChanged', (data) => {
-            console.log('Received personalChanged:', data);
-            // Execute callbacks
+            console.log('👤 Received personalChanged:', data);
+            
+            // Execute callbacks first
             if (this.eventCallbacks['personalChanged']) {
                 this.eventCallbacks['personalChanged'].forEach(callback => callback(data));
             }
             
-            // FIXED: Handle incremental updates vs full refresh
-            if (data.operation && data.updatedEmployee) {
-                // This is an incremental update - handle it directly
-                this.handleIncrementalUpdate(data);
-            } else {
-                // This might be a full data refresh
-                this.debouncedUpdateDataFromAPI();
-            }
+            // 🔧 FIX: Always force a full refresh for consistency
+            // This ensures we get the latest data from server
+            console.log('🔄 Triggering data refresh due to personalChanged event');
+            this.forceUpdateDataFromAPI();
+        });
+
+        // 🔧 FIX: New event handler for dataRefreshNeeded
+        this.socket.on('dataRefreshNeeded', (data) => {
+            console.log('🔄 Received dataRefreshNeeded:', data);
+            
+            // Force immediate refresh
+            this.forceUpdateDataFromAPI();
         });
 
         this.socket.on('benefitPlanUpdated', (data) => {
-            console.log('Received benefitPlanUpdated:', data);
+            console.log('💰 Received benefitPlanUpdated:', data);
             if (this.eventCallbacks['benefitPlanUpdated']) {
                 this.eventCallbacks['benefitPlanUpdated'].forEach(callback => callback(data));
             }
-            this.debouncedUpdateDataFromAPI();
+            this.forceUpdateDataFromAPI();
         });
 
         // Handle error events
         this.socket.on('error', (error) => {
-            console.error('Socket error:', error);
+            console.error('❌ Socket error:', error);
             this.updateConnectionStatus('error');
         });
-    }
 
-    // FIXED: Handle incremental updates without full API refresh
-    handleIncrementalUpdate(data) {
-        console.log('Handling incremental update:', data);
-        
-        // Get current data from memory/cache
-        const currentData = window.currentHumanData || [];
-        
-        if (data.operation === 'Update' && data.updatedEmployee) {
-            // Find and update the specific employee
-            const empIndex = currentData.findIndex(emp => emp.Employee_Id === data.employeeId);
-            if (empIndex >= 0) {
-                currentData[empIndex] = { ...currentData[empIndex], ...data.updatedEmployee };
-                console.log('Updated employee in local data:', currentData[empIndex]);
-            }
-        } else if (data.operation === 'Create' && data.updatedEmployee) {
-            // Add new employee
-            currentData.push(data.updatedEmployee);
-        } else if (data.operation === 'Delete') {
-            // Remove employee
-            const empIndex = currentData.findIndex(emp => emp.Employee_Id === data.employeeId);
-            if (empIndex >= 0) {
-                currentData.splice(empIndex, 1);
-            }
-        }
-        
-        // Store updated data
-        window.currentHumanData = currentData;
-        
-        // Dispatch event with updated data
-        const event = new CustomEvent('dataRefreshed', { detail: currentData });
-        document.dispatchEvent(event);
+        // 🔧 FIX: Handle reconnection events
+        this.socket.on('reconnect', () => {
+            console.log('🔄 Reconnected to server');
+            this.updateConnectionStatus('connected');
+            // Force refresh after reconnection
+            this.forceUpdateDataFromAPI();
+        });
     }
 
     // Register a callback function for a specific event
@@ -141,23 +122,30 @@ class SocketClient {
     handleReconnect() {
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
-            console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+            console.log(`🔄 Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
             setTimeout(() => {
                 this.socket.connect();
-            }, 5000); // Wait 5 seconds before trying to reconnect
+            }, 3000); // Wait 3 seconds before trying to reconnect
         } else {
-            console.error('Max reconnection attempts reached');
+            console.error('❌ Max reconnection attempts reached');
             this.updateConnectionStatus('failed');
         }
     }
     
-    // FIXED: Force update without debounce for initial load
     forceUpdateDataFromAPI() {
-        console.log('Force updating data from API...');
+        console.log('⚡ Force updating data from API...');
+        
+        // Cancel any pending debounced updates
+        if (this.debounceTimeout) {
+            clearTimeout(this.debounceTimeout);
+            this.debounceTimeout = null;
+        }
+        
+        // Update immediately
         updateDataFromAPI();
     }
     
-    // Debounced API update function
+    // Debounced API update function - keep for other scenarios
     debouncedUpdateDataFromAPI() {
         const now = Date.now();
         if (this.debounceTimeout) clearTimeout(this.debounceTimeout);
@@ -176,63 +164,128 @@ class SocketClient {
     }
 }
 
-// Only keep one instance of fetch data
 let isFetching = false;
+let retryCount = 0;
+const maxRetries = 3;
 
 async function updateDataFromAPI() {
     // Prevent concurrent fetches
     if (isFetching) {
-        console.log('Data fetch already in progress, skipping...');
+        console.log('⏳ Data fetch already in progress, skipping...');
         return;
     }
     
     isFetching = true;
     
     try {
-        console.log('Fetching fresh data from API...');
-        const response = await fetch('http://localhost:3000/api/humanList');
+        console.log('📡 Fetching fresh data from API...');
         
-        if (!response.ok) throw new Error('Failed to fetch data');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+        const response = await fetch('http://localhost:3000/api/humanList', {
+            signal: controller.signal,
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+        });
+
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
         const result = await response.json();
-        console.log('Data refreshed from API - Total records:', result.length);
+        console.log(`✅ Data refreshed from API - Total records: ${result.length}`);
 
-        // FIXED: Store data globally for incremental updates
         window.currentHumanData = result;
+        retryCount = 0;
 
         // Only dispatch event if we have valid data
-        if (result && Array.isArray(result) && result.length > 0) {
+        if (result && Array.isArray(result) && result.length >= 0) {
             // Dispatch a custom event that other scripts can listen for
-            const event = new CustomEvent('dataRefreshed', { detail: result });
+            const event = new CustomEvent('dataRefreshed', { 
+                detail: {
+                    data: result,
+                    timestamp: new Date().toISOString(),
+                    source: 'api_refresh'
+                }
+            });
             document.dispatchEvent(event);
-            
-            // FIXED: Clear any error messages
+
             const errorContainer = document.getElementById('error-container');
             if (errorContainer) {
                 errorContainer.style.display = 'none';
             }
+
+            // 🔧 FIX: Show success message briefly
+            console.log('📊 Data successfully updated and dispatched to UI');
         }
 
         return result;
+        
     } catch (error) {
-        console.error('Error updating data:', error);
-        // Show error message in UI
+        console.error('❌ Error updating data:', error);
+
+        if (retryCount < maxRetries) {
+            retryCount++;
+            console.log(`🔄 Retrying data fetch (${retryCount}/${maxRetries})...`);
+            
+            // Retry after a short delay
+            setTimeout(() => {
+                isFetching = false; // Reset flag for retry
+                updateDataFromAPI();
+            }, 2000 * retryCount); // Exponential backoff
+            
+            return; // Don't execute the error UI update yet
+        }
+        
+        // Show error message in UI after all retries failed
         const errorMessage = document.getElementById('error-message');
         const errorContainer = document.getElementById('error-container');
         if (errorMessage && errorContainer) {
-            errorMessage.textContent = `Connection error: ${error.message}`;
+            errorMessage.textContent = `Connection error: ${error.message} (Failed after ${maxRetries} retries)`;
             errorContainer.style.display = 'block';
         }
+        
+        // Reset retry count for next attempt
+        retryCount = 0;
+        
     } finally {
         isFetching = false;
     }
 }
 
-// Create and export a singleton instance
-const socketClient = new SocketClient();
+function initializeSocketClient() {
+    // Create and export a singleton instance
+    const socketClient = new SocketClient();
+    
+    // Export the socketClient for use in other modules
+    window.socketClient = socketClient;
+    
+    // Make updateDataFromAPI globally available
+    window.updateDataFromAPI = updateDataFromAPI;
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        // Add any initialization that needs DOM to be ready
+        console.log('🎯 Socket client initialized and ready');
+        
+        // Try to get initial data
+        updateDataFromAPI();
+    });
+    
+    // 🔧 FIX: Handle page visibility changes
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && socketClient.socket.connected) {
+            console.log('👁️ Page became visible, refreshing data...');
+            updateDataFromAPI();
+        }
+    });
+    
+    return socketClient;
+}
 
-// Export the socketClient for use in other modules
-window.socketClient = socketClient;
-
-// Make updateDataFromAPI globally available
-window.updateDataFromAPI = updateDataFromAPI;
+// Initialize immediately
+const socketClient = initializeSocketClient();

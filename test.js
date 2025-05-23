@@ -1,10 +1,10 @@
-
 let humans = [];
 let currentPage = 1;
 let pageSize = 20;
 let lastId = 0;
 let hasMore = true;
 let lastIdsStack = [0];
+let isRefreshing = false;
 
 
 
@@ -19,15 +19,40 @@ document.getElementById('btnClosePopup').addEventListener('click', function () {
     document.getElementById('popupForm').style.display = 'none';
 });
 
-async function fetchHumanData() {
+// Wait for socket client to be ready
+function waitForSocketClient() {
+    return new Promise((resolve) => {
+        const checkSocket = () => {
+            if (window.socketClient) {
+                resolve(window.socketClient);
+            } else {
+                setTimeout(checkSocket, 100);
+            }
+        };
+        checkSocket();
+    });
+}
+
+async function fetchHumanData(forceCacheBust=false) {
     try {
         console.log('Attempting to fetch data from server...');
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 20000);
 
-        const response = await fetch('http://localhost:3000/api/humanList', {
-            signal: controller.signal
+        const url = new URL('http://localhost:3000/api/humanList');
+        if (forceCacheBust) {
+            url.searchParams.append('_t', Date.now());
+            url.searchParams.append('_bust', Math.random().toString(36));
+        }
+
+        const response = await fetch(url.toString(), {
+            signal: controller.signal,
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
         });
 
         clearTimeout(timeoutId);
@@ -60,22 +85,99 @@ function paginateData(data, page, pageSize) {
     };
 }
 
-async function fetchAndDisplayHumans() {
-    // If we haven't loaded the data yet, load it
-    if (humans.length === 0 ) {
-        const allData = await fetchHumanData();
-        humans = allData; // Store all data
+async function fetchAndDisplayHumans(forceRefresh = false, source = 'manual') {
+    if (isRefreshing && !forceRefresh) {
+        console.log('⏳ Data refresh already in progress, skipping...');
+        return;
     }
 
-    // Get current page of data
-    const paginatedResult = paginateData(humans, currentPage, pageSize);
+    try {
+        isRefreshing = true;
+        console.log(`🔄 Refreshing data... (source: ${source}, forceRefresh: ${forceRefresh})`);
+        if (forceRefresh || humans.length === 0) {
+            const shouldBustCache = forceRefresh || source === 'socket' || source === 'rabbit';
+            const allData = await fetchHumanData(shouldBustCache);
+            
+            if (allData && allData.length > 0) {
+                humans = allData; // Update global data
+                console.log(`✅ Updated humans data: ${humans.length} records (source: ${source})`);
+            } else {
+                console.warn('⚠️ No data received from server');
+            }
+        }
 
-    // Update hasMore flag
-    hasMore = paginatedResult.hasMore;
+        const paginatedResult = paginateData(humans, currentPage, pageSize);
+        hasMore = paginatedResult.hasMore;
+        updateTable(paginatedResult.data);
+        updatePaginationControls(paginatedResult.totalPages);
 
-    // Update the table with current page
-    updateTable(paginatedResult.data);
-    updatePaginationControls(paginatedResult.totalPages);
+            // Hide error container if data loaded successfully
+        if (humans.length > 0) {
+            const errorContainer = document.getElementById('error-container');
+            if (errorContainer) {
+                errorContainer.style.display = 'none';
+            }
+        }
+
+    } catch (error) {
+        console.error('❌ Error in fetchAndDisplayHumans:', error);
+    } finally {
+        isRefreshing = false;
+    }
+}     
+
+async function setupSocketHandlers() {
+    try {
+        const socketClient = await waitForSocketClient();
+        console.log('🔗 Setting up socket event handlers...');
+
+        // Listen for custom data refresh events
+        document.addEventListener('dataRefreshed', async (event) => {
+            console.log('📊 Received dataRefreshed event:', event.detail);
+            await fetchAndDisplayHumans(true, 'api_refresh');
+        });
+
+        // Handle personalChanged events from RabbitMQ
+        socketClient.on('personalChanged', async (data) => {
+            console.log('👤 Socket: personalChanged received:', data);
+            console.log('🔄 Triggering immediate data refresh due to personalChanged...');
+            
+            // Force refresh with cache busting
+            await fetchAndDisplayHumans(true, 'socket');
+        });
+
+        // Handle dataRefreshNeeded events
+        socketClient.on('dataRefreshNeeded', async (data) => {
+            console.log('🔄 Socket: dataRefreshNeeded received:', data);
+            console.log('🔄 Triggering immediate data refresh due to dataRefreshNeeded...');
+            
+            // Force refresh with cache busting
+            await fetchAndDisplayHumans(true, 'socket');
+        });
+
+        // Handle benefit plan updates
+        socketClient.on('benefitPlanUpdated', async (data) => {
+            console.log('💰 Socket: benefitPlanUpdated received:', data);
+            console.log('🔄 Triggering immediate data refresh due to benefitPlanUpdated...');
+            
+            // Force refresh with cache busting
+            await fetchAndDisplayHumans(true, 'socket');
+        });
+
+        // Handle data initialization
+        socketClient.on('dataInitialized', async (data) => {
+            console.log('📊 Socket: dataInitialized received:', data);
+            console.log('🔄 Triggering immediate data refresh due to dataInitialized...');
+            
+            // Force refresh with cache busting
+            await fetchAndDisplayHumans(true, 'socket');
+        });
+
+        console.log('✅ Socket event handlers configured successfully');
+
+    } catch (error) {
+        console.error('❌ Error setting up socket handlers:', error);
+    }
 }
 
 function updateTable(data) {
@@ -211,22 +313,7 @@ function fillForm(human) {
 
 
 let formMode = 'edit'; // 'add' hoặc 'edit'
-// // Bắt sự kiện click cho các nút edit (cần gọi sau khi tạo bảng xong)
-// document.addEventListener('click', function(e) {
-//   if(e.target.classList.contains('edit-btn')) {
-//     e.preventDefault();
-//     const employeeId = e.target.getAttribute('data-id');
-//     // Tìm đối tượng human theo employeeId trong mảng humans đã lấy
-//     const human = humans.find(h => h.Employee_Id == employeeId);
-//     if(human) {
-//       fillForm(human);
-//       // Hiện popup
-//       document.getElementById('popupForm').style.display = 'flex';
-//     } else {
-//       alert('Không tìm thấy dữ liệu nhân viên');
-//     }
-//   }
-// });
+
 document.addEventListener('click', function (e) {
     if (e.target.classList.contains('edit-btn')) {
         e.preventDefault();
@@ -244,10 +331,7 @@ document.addEventListener('click', function (e) {
     }
 });
 
-
-
-
-
+// Delete button click event
 document.addEventListener('click', async function (e) {
     if (e.target.classList.contains('delete-btn')) {
         e.preventDefault();
@@ -261,8 +345,8 @@ document.addEventListener('click', async function (e) {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                 });
-                // Xóa thành công
-                // Cập nhật mảng humans
+                
+                // Update humans array
                 const index = humans.findIndex(h => h.Employee_Id == employeeId);
                 if (index >= 0) {
                     humans.splice(index, 1);
@@ -272,7 +356,7 @@ document.addEventListener('click', async function (e) {
                     }
                 }
 
-                // Cập nhật bảng
+                // Update table and pagination
                 await fetchAndDisplayHumans();
 
                 alert(`Đã xóa nhân viên ID ${employeeId} thành công.`);
@@ -286,13 +370,6 @@ document.addEventListener('click', async function (e) {
 });
 
 
-
-// document.getElementById('btnOpenPopup').addEventListener('click', function(e) {
-//   e.preventDefault();
-//   document.getElementById('popupForm').style.display = 'flex';
-//   const form = document.getElementById('employeeForm');
-//   form.reset();
-// });
 document.getElementById('btnOpenPopup').addEventListener('click', function (e) {
     e.preventDefault();
     formMode = 'add';
@@ -303,54 +380,7 @@ document.getElementById('btnOpenPopup').addEventListener('click', function (e) {
     form.reset();
 });
 
-
-
-// // Modify the form submit handler
-// document.getElementById('employeeForm').addEventListener('submit', async function(e) {
-//     e.preventDefault();
-//     const newData = getFormData();
-
-//     try {
-//         // Find if employee with this ID already exists
-//         const index = humans.findIndex(h => h.Employee_Id === newData.Employee_Id);
-//         console.log('Index of existing employee:',typeof newData.Employee_Id);
-//         console.log('Index of existing employee:',typeof humans[0].Employee_Id);
-
-//         if (index >= 0) {
-//             // Update existing employee
-//             const isConfirmed = confirm("Đã có ID trùng, bạn có muốn chỉnh sửa không?");
-//             if (isConfirmed) {
-//                 // Call API to update databases
-//                 await fetch(`http://localhost:3000/api/route/updateEmployee`, {
-//                     method: 'POST',
-//                     headers: { 'Content-Type': 'application/json' },
-//                     body: JSON.stringify(newData)
-//                 });
-//                 humans[index] = newData;
-//                 console.log('Updated existing employee:', newData);
-//             } else {
-//                 resetFormFields();
-//                 return;
-//             }
-//         } else {
-//             // Add new employee
-//             await fetch('http://localhost:3000/api/route/addEmployee', {
-//                 method: 'POST',
-//                 headers: { 'Content-Type': 'application/json' },
-//                 body: JSON.stringify(newData)
-//             });
-//             humans.push(newData);
-//         }
-
-//         // Close popup and refresh data
-//         document.getElementById('popupForm').style.display = 'none';
-//         await fetchAndDisplayHumans(); // This will get fresh data from server
-
-//     } catch (error) {
-//         console.error('Error updating data:', error);
-//         alert('Failed to save changes. Please try again.');
-//     }
-// });
+// Submit form
 document.getElementById('employeeForm').addEventListener('submit', async function (e) {
     e.preventDefault();
     const formData = getFormData();
@@ -417,8 +447,6 @@ document.getElementById('employeeForm').addEventListener('submit', async functio
     }
 });
 
-
-
 document.getElementById('nextPage').addEventListener('click', async function () {
     if (hasMore) {
         lastIdsStack.push(lastId);
@@ -456,10 +484,23 @@ document.getElementById('lastPage').addEventListener('click', async function () 
     }
 });
 
-// Initial load
-window.addEventListener('DOMContentLoaded', async () => {
-    await fetchAndDisplayHumans();
-});
+async function initializeApplication() {
+    console.log('🚀 Initializing application...');
+    
+    try {
+        // First, setup socket handlers
+        await setupSocketHandlers();
+        
+        // Then load initial data with cache busting
+        await fetchAndDisplayHumans(true, 'initialization');
+        
+        console.log('✅ Application initialized successfully');
+    } catch (error) {
+        console.error('❌ Error during initialization:', error);
+        // Try to load data without cache busting as fallback
+        await fetchAndDisplayHumans(false, 'fallback');
+    }
+}
 
 
 // Lấy các phần tử cần thiết
@@ -504,16 +545,21 @@ clearSearchBtn.addEventListener('click', function () {
     fetchAndDisplayHumans(); // hiển thị lại bảng đầy đủ
 });
 
-if (window.socketClient) {
-    window.socketClient.on('personalChanged', async () => {
-        // Clear local cache and reload data
-        humans = [];
-        currentPage = 1;
-        await fetchAndDisplayHumans();
-    });
-    window.socketClient.on('benefitPlanUpdated', async () => {
-        humans = [];
-        currentPage = 1;
-        await fetchAndDisplayHumans();
-    });
-}
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', initializeApplication);
+
+// Handle page visibility changes for fresh data
+document.addEventListener('visibilitychange', async () => {
+    if (!document.hidden) {
+        console.log('👁️ Page became visible, refreshing data...');
+        await fetchAndDisplayHumans(true, 'visibility');
+    }
+});
+
+// Handle browser back/forward navigation
+window.addEventListener('pageshow', async (event) => {
+    if (event.persisted) {
+        console.log('🔄 Page restored from cache, refreshing data...');
+        await fetchAndDisplayHumans(true, 'pageshow');
+    }
+});

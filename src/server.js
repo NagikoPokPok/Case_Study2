@@ -64,10 +64,53 @@ app.get('/api/humanList', (req, res) => {
   }
 });
 
+async function clearAllRedisCache() {
+  try {
+    if (!redisClient.isReady) {
+      console.log('⚠️ Redis not connected, skipping cache clear');
+      return;
+    }
+
+    console.log('🗑️ Clearing all Redis cache...');
+    
+    // Method 1: Clear all humanData keys
+    const keys = [];
+    for await (const key of redisClient.scanIterator({ MATCH: 'humanData:*' })) {
+      if (key && typeof key === 'string' && key.trim() !== '') {
+        keys.push(key);
+      }
+    }
+    
+    if (keys.length > 0) {
+      await redisClient.del(keys);
+      console.log(`✅ Deleted ${keys.length} Redis cache keys`);
+    }
+
+    // Method 2: Also clear any other related cache patterns
+    const otherKeys = [];
+    for await (const key of redisClient.scanIterator({ MATCH: '*human*' })) {
+      if (key && typeof key === 'string' && key.trim() !== '') {
+        otherKeys.push(key);
+      }
+    }
+    
+    if (otherKeys.length > 0) {
+      await redisClient.del(otherKeys);
+      console.log(`✅ Deleted ${otherKeys.length} additional cache keys`);
+    }
+
+  } catch (err) {
+    console.error('❌ Error clearing Redis cache:', err);
+  }
+}
+
 // Hàm gọi API tính toán khi server chạy lần đầu
 async function calculateOnServerStart() {
   try {
     console.log('🔄 Starting data refresh process...');
+
+    await clearAllRedisCache();
+
     let lastId = 0;
     let allHumans = [];
     let batchCount = 0;
@@ -102,24 +145,7 @@ async function calculateOnServerStart() {
     setHumans(allHumans);
     
     // Delete old data from Redis cache
-    const keys = [];
-    for await (const key of redisClient.scanIterator({ MATCH: 'humanData:*' })) {
-      if (key && typeof key === 'string' && key.trim() !== '') {
-        keys.push(key);
-      }
-    }
-    for (const key of keys) {
-      await redisClient.del(key);
-      console.log(`Deleted Redis cache key: ${key}`);
-    }
-
-    console.log(`🏁 Tổng cộng ${getHumans().length} bản ghi đã được load vào bộ nhớ`);
-
-    // PHÁT SỰ KIỆN WEBSOCKET CHO CLIENT
-    if (typeof io !== 'undefined') {
-      io.emit('personalChanged', { message: 'Data updated from legacy system' });
-      console.log('WebSocket event personalChanged emitted');
-    }
+    lastSuccessfulUpdate = new Date().toISOString();
 
     console.log(`🏁 Tổng cộng ${getHumans().length} bản ghi đã được load vào bộ nhớ`);
 
@@ -138,6 +164,14 @@ async function handlePersonalChangeMessage(message) {
   console.log('Received message:', message);
 
   try {
+    if (isDataRefreshInProgress) {
+      console.log('⏳ Data refresh already in progress, queuing...');
+      dataRefreshNeeded = true;
+      return;
+    }
+
+    isDataRefreshInProgress = true;
+
     const humans = getHumans();
     const empId = Number(message.Employee_ID);
     const operation = message.Operation;
@@ -170,6 +204,7 @@ async function handlePersonalChangeMessage(message) {
           if (!exists) {
             humans.push(newData);
             console.log(`Added new employee with ID ${empId}`);
+            operationSuccess = true;
 
             // Update Redis cache
             if (redisClient.isReady) {
@@ -189,6 +224,7 @@ async function handlePersonalChangeMessage(message) {
             humans[idx] = { ...humans[idx], ...newData };
             console.log(`Updated employee with ID ${empId}`);
             console.log('new humans' , humans[idx]);
+            operationSuccess = true;
 
             // Update Redis cache
             if (redisClient.isReady) {
@@ -199,6 +235,7 @@ async function handlePersonalChangeMessage(message) {
             // Nếu chưa có thì thêm mới
             humans.push(newData);
             console.log(`Added new employee with ID ${empId} vì không tìm thấy khi update`);
+            operationSuccess = true;
 
             // Update Redis cache
             if (redisClient.isReady) {
@@ -215,6 +252,7 @@ async function handlePersonalChangeMessage(message) {
           if (idx >= 0) {
             humans.splice(idx, 1);
             console.log(`Deleted employee with ID ${empId}`);
+            operationSuccess = true;
 
             // Xóa cache Redis key tương ứng
             if (redisClient.isReady) {
@@ -232,25 +270,63 @@ async function handlePersonalChangeMessage(message) {
         return;
     }
 
-    // Phát sự kiện websocket để frontend cập nhật
-    if (typeof io !== 'undefined') {
-      const updatedData = getHumans();
-      io.emit('personalChanged', {
-        data: updatedData,
-        message: `${operation} employee ${empId}`,
-        employeeId: empId,
-        operation,
-      });
-      console.log('WebSocket event personalChanged emitted');
+    if (operationSuccess) {
+      // Update timestamp
+      lastSuccessfulUpdate = new Date().toISOString();
+      
+      // Update humans data in memory
+      if (redisClient.isReady) {
+        // Clear any aggregate cache that might be affected
+        const aggregateKeys = [];
+        for await (const key of redisClient.scanIterator({ MATCH: '*total*' })) {
+          if (key && typeof key === 'string' && key.trim() !== '') {
+            aggregateKeys.push(key);
+          }
+        }
+        if (aggregateKeys.length > 0) {
+          await redisClient.del(aggregateKeys);
+          console.log(`💾 Cleared ${aggregateKeys.length} aggregate cache keys`);
+        }
+      }
+
+      // Emit WebSocket event to all connected clients
+      if (typeof io !== 'undefined') {
+        const updatedData = {
+          operation,
+          employeeId: empId,
+          updatedEmployee: operation !== 'Delete' ? newData : null,
+          totalRecords: getHumans().length,
+          timestamp: lastSuccessfulUpdate,
+          message: `${operation} employee ${empId} successfully`
+        };
+
+        // Emit to all connected clients
+        io.emit('personalChanged', updatedData);
+        console.log(`📡 WebSocket event 'personalChanged' emitted:`, {
+          operation,
+          employeeId: empId,
+          totalRecords: getHumans().length
+        });
+
+        // Also emit a general data refresh event
+        io.emit('dataRefreshNeeded', {
+          reason: `Employee ${operation}`,
+          timestamp: lastSuccessfulUpdate,
+          affectedId: empId
+        });
+        console.log(`📡 WebSocket event 'dataRefreshNeeded' emitted`);
+      }
     }
+
   } catch (err) {
-    console.error('Error handling personal change message:', err);
+    console.error('❌ Error handling personal change message:', err);
   } finally {
     isDataRefreshInProgress = false;
     
     // If another refresh was needed while we were processing, trigger it
     if (dataRefreshNeeded) {
       dataRefreshNeeded = false;
+      console.log('🔄 Processing queued data refresh...');
       setTimeout(() => handlePersonalChangeMessage(message), 1000);
     }
   }
@@ -294,6 +370,8 @@ app.post('/api/triggerRefresh', async (req, res) => {
       return res.status(429).json({ message: 'A data refresh is already in progress' });
     }
     
+    await clearAllRedisCache();
+
     // Trigger a data refresh with a dummy message
     await handlePersonalChangeMessage({ source: 'manual', trigger: 'api' });
     
@@ -314,6 +392,15 @@ app.get('/api/socket/status', (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to get socket status', message: err.message });
+  }
+});
+
+app.post('/api/clearCache', async (req, res) => {
+  try {
+    await clearAllRedisCache();
+    res.json({ message: 'Cache cleared successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to clear cache', message: err.message });
   }
 });
 
@@ -347,6 +434,9 @@ async function startApp() {
   
   // Try to load data - even if databases are down, we might get cached data
   try {
+
+    await clearAllRedisCache();
+    
     await calculateOnServerStart();
   } catch (err) {
     console.error('Initial data load failed completely:', err);
