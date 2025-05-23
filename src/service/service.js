@@ -207,7 +207,7 @@ async function getHumanDataService(limit = 50000, lastId = 0) {
                         Ethnicity: person.Ethnicity,
                         Employment_Status: person.Employment?.Employment_status || 'Not Specified',
                         Department: person.JobHistory?.Department || 'Not Specified',
-                        PayRates_id: employee.idPay_Rate,
+                        PayRates_id: employee.PayRates_id,
                         Paid_To_Date: employee.Paid_To_Date || 0,
                         Paid_Last_Year: employee.Paid_Last_Year || 0,
                         Vacation_Days: employee.Vacation_Days || 0,
