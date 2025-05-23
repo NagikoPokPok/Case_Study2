@@ -13,7 +13,7 @@
 
   <div class="table-wrapper">
     <div class="table-header">
-      EMPLOYEES<a href="#" id="btnOpenPopup">Create New</a>
+      EMPLOYEES<button href="#" id="btnOpenPopup">Create New</a>
     </div>
     <div style="margin-bottom: 15px; text-align: left;">
       <input type="text" id="searchIdInput" placeholder="Input ID" />
@@ -33,7 +33,7 @@
           <th>Ethnicity</th>
           <th>Employment Status</th>
           <th>Department</th>
-          <th>Pay Id</th>
+          <th>PayRates Id</th>
           <th>Paid To Date</th>
           <th>Paid Last Year</th>
           <th>Vacation Days</th>
@@ -41,6 +41,8 @@
           <th>Average Plan Benefit</th>
           <th>Pay Amount</th>
           <th>Tax Percentage</th>
+          <th>Edit</th>
+          <th>Delete</th>
         </tr>
       </thead>
       <tbody>
@@ -80,39 +82,38 @@
         <label for="Ethnicity">Ethnicity</label>
         <input type="text" id="Ethnicity" name="Ethnicity" />
 
-        <label for="Employment_Status">Employment_Status</label>
+        <label for="Employment_Status">Employment Status</label>
         <select id="Employment_Status" name="Employment_Status" required>
           <option value="">-- Select Employment_Status --</option>
-          <option value="On Leave">On Leave</option>
-          <option value="Terminated">Terminated</option>
-          <option value="Active">Active</option>
+          <option value="Part-time">Part-time</option>
+          <option value="Full-time">Full-time</option>
         </select>
 
         <label for="Department">Department</label>
         <input type="text" id="Department" name="Department" />
 
-        <label for="Pay ID">Pay Id</label>
-        <input type="text" id="Pay_Id" name="Pay_Id" />
+        <label for="Pay ID">PayRates Id</label>
+        <input type="text" id="PayRates_Id" name="Pay_Id" />
 
-        <label for="Paid_To_Date">Paid_To_Date</label>
+        <label for="Paid_To_Date">Paid To Date</label>
         <input type="number" id="Paid_To_Date" name="Paid_To_Date" min="0" step="0.01" />
 
-        <label for="Paid_Last_Year">Paid_Last_Year</label>
+        <label for="Paid_Last_Year">Paid Last Year</label>
         <input type="number" id="Paid_Last_Year" name="Paid_Last_Year" min="0" step="0.01" />
 
-        <label for="Vacation_Days">Vacation_Days</label>
+        <label for="Vacation_Days">Vacation Days</label>
         <input type="number" id="Vacation_Days" name="Vacation_Days" min="0" />
 
-        <label for="Benefit_Plan">Benefit_Plan</label>
+        <label for="Benefit_Plan">Benefit Plan</label>
         <input type="text" id="Benefit_Plan" name="Benefit_Plan" />
 
-        <label for="Average_Plan_Benefit">Average_Plan_Benefit</label>
+        <label for="Average_Plan_Benefit">Average Plan Benefit</label>
         <input type="number" id="Average_Plan_Benefit" name="Average_Plan_Benefit" min="0" step="0.01" />
 
-        <label for="Pay_Amount">Pay_Amount</label>
+        <label for="Pay_Amount">Pay Amount</label>
         <input type="number" id="Pay_Amount" name="Pay_Amount" min="0" step="0.01" />
 
-        <label for="Tax_Percentage">Tax_Percentage</label>
+        <label for="Tax_Percentage">Tax Percentage</label>
         <input type="number" id="Tax_Percentage" name="Tax_Percentage" min="0" max="100" step="0.01" />
 
         <div class="form-buttons">

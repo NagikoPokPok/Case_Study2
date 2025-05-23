@@ -197,11 +197,11 @@ function updateTable(data) {
             <td>${human.Employment_Status || ''}</td>
             <td>${human.Department || ''}</td>
             <td>${human.PayRates_id || ''}</td>
-            <td>${human.Paid_To_Date || 0}</td>
-            <td>${human.Paid_Last_Year || 0}</td>
-            <td>${human.Vacation_Days || 0}</td>
+            <td>${human.Paid_To_Date || ''}</td>
+            <td>${human.Paid_Last_Year || ''}</td>
+            <td>${human.Vacation_Days || ''}</td>
             <td>${human.Benefit_Plan || ''}</td>
-            <td>${human.Average_Plan_Benefit || 0}</td>
+            <td>${human.Average_Plan_Benefit || ''}</td>
             <td>${human.Pay_Amount || 0}</td>
             <td>${human.Tax_Percentage || 0}</td>
             <td><a href="#" class="edit-btn" data-id="${human.Employee_Id}">Edit</a></td>
@@ -280,7 +280,7 @@ function getFormData() {
         Ethnicity: document.getElementById('Ethnicity').value.trim(),
         Employment_Status: document.getElementById('Employment_Status').value.trim(),
         Department: document.getElementById('Department').value.trim(),
-        PayRates_id: document.getElementById('Pay_Id').value.trim(),
+        PayRates_id: document.getElementById('PayRates_Id').value.trim(),
         Paid_To_Date: parseFloat(document.getElementById('Paid_To_Date').value) || 0,
         Paid_Last_Year: parseFloat(document.getElementById('Paid_Last_Year').value) || 0,
         Vacation_Days: parseInt(document.getElementById('Vacation_Days').value) || 0,
@@ -301,7 +301,7 @@ function fillForm(human) {
     document.getElementById('Ethnicity').value = human.Ethnicity || ''; // lưu ý key đúng
     document.getElementById('Employment_Status').value = human.Employment_Status;
     document.getElementById('Department').value = human.Department;
-    document.getElementById('Pay_Id').value = human.PayRates_id;
+    document.getElementById('PayRates_Id').value = human.PayRates_id;
     document.getElementById('Paid_To_Date').value = human.Paid_To_Date;
     document.getElementById('Paid_Last_Year').value = human.Paid_Last_Year;
     document.getElementById('Vacation_Days').value = human.Vacation_Days;
@@ -547,7 +547,7 @@ searchBtn.addEventListener('click', function () {
     searchMessage.textContent = ''; // xóa thông báo cũ
 
     if (!idToFind) {
-        alert('Vui lòng nhập Employee ID để tìm kiếm.');
+        alert('Please enter the emloyee id.');
         return;
     }
 
@@ -559,7 +559,7 @@ searchBtn.addEventListener('click', function () {
     } else {
         updateTable([]); // xóa bảng
         updatePaginationControls(0);
-        searchMessage.textContent = 'Không tìm thấy nhân viên với ID này.';
+        searchMessage.textContent = 'Not exist.';
     }
 });
 
