@@ -396,7 +396,7 @@ document.getElementById('employeeForm').addEventListener('submit', async functio
                 // Call API to update databases
                 document.getElementById(Employee_Id).value = '';
             } else {
-                await fetch(`http://localhost:3000/api/route/updateEmployee`, {
+                await fetch(`http://localhost:3000/api/route/addEmployee`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formData)
@@ -409,10 +409,11 @@ document.getElementById('employeeForm').addEventListener('submit', async functio
                 humans = allData;
 
                 // Không thay đổi currentPage, giữ nguyên trang đang đứng
-                await fetchAndDisplayHumans(); // KHÔNG truyền `true`
+                
                 // await fetchAndDisplayHumans(true);
                 alert(`Add successfully Employee: ${formData.Employee_Id}`);
                 document.getElementById('popupForm').style.display = 'none';
+                await fetchAndDisplayHumans(); // KHÔNG truyền `true`
             }
 
         } else if (formMode === 'edit') {
